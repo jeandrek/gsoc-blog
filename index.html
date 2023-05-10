@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>GSoC 2023 progress blog</title>
+    <link rel="stylesheet" href="style.css" type="text/css">
+  </head>
+  <body>
+    <header>
+      <h1>Summer of Code 2023 progress blog</h1>
+      <p class="subtitle">NetBSD</p>
+      <p class="subtitle">Update Atheros Wi-Fi driver(s) for new Wi-Fi stack</p>
+      <p class="subtitle">Jeandre Kruger</p>
+    </header>
+    <main>
+      <article>
+        <h2>Beginning GSoC 2023</h2>
+        <p class="date">
+          <time datetime="2023-05-10">10<sup>th</sup> May, 2023</time>
+        </p>
+        <p>
+          NetBSD is undergoing a
+          <a href="https://wiki.netbsd.org/Wifi_renewal_on_hg">
+            transition to a new Wi-Fi stack</a>.
+          My project is to convert the drivers athn(4) and if time allows ath(4).
+        </p>
+        <p>
+          This far I have ensured that the wifi branch builds and runs on the
+          target netbook.  All the unconverted drivers need to be disabled.
+          Ethernet works.  Presently it identifies as NetBSD 9.99.100.
+        </p>
+        <p>
+          To examine:
+        </p>
+        <ul>
+          <li>
+            dev/pci/if_athn_pci.c and dev/pci/if_ath_pci.c and (perhaps
+            especially) dev/ic/athn.c and dev/ic/ath.c
+          </li>
+          <li>other converted drivers e.g. rtwn(4)</li>
+          <li>
+            FreeBSD
+            <a href="https://cgit.freebsd.org/src/tree/sys/dev/ath?h=main">ath(4)</a>
+            &ndash; converted and seemingly a lot more code now</li>
+        </ul>
+        <p>
+          One of the most obvious differences in the converted drivers is
+          the locking (<code>mutex_init</code>, <code>mutex_enter</code>,
+          <code>mutex_exit</code>).
+        </p>
+      </article>
+    </main>
+  </body>
+</html>

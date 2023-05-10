@@ -1,0 +1,22 @@
+html {
+    background-color: beige;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+}
+
+body {
+    margin: 0;
+    padding: 2em;
+    background-color: white;
+    max-width: 1000px;
+}
+
+.date {
+    font-style: italic;
+}
+
+h1, p.subtitle {
+    text-align: center;
+    margin: .5rem;
+}
