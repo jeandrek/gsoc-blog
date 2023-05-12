@@ -14,6 +14,43 @@
     </header>
     <main>
       <article>
+        <h2>Basic differences (ath vs athn)</h2>
+        <p class="date">
+          <time datetime="2023-05-12">12<sup>th</sup> May, 2023</time>
+        </p>
+        <p>
+          ath(4) and athn(4) support somewhat different sets of hardware.  The
+          most obvious difference in implementation is that ath(4) uses the
+          Atheros HAL.  This was initially a blob but
+          <a href="https://www.phoronix.com/news/Njc1MA">
+            open-sourced in 2009</a>.
+          According to the
+          <a href="https://wiki.freebsd.org/dev/ath_hal%284%29">
+            FreeBSD wiki</a>,
+        </p>
+        <blockquote>
+          <p>The Atheros HAL is an abstraction layer which attempts to hide much of the card specific configuration from the rest of the atheros wireless driver.</p>
+          <p>The HAL takes care of the MAC, baseband and radio. It exports a set of routines which allow the atheros wireless driver to do certain tasks (set channel, configure TX queue, queue TX packet, queue RX buffer, setup interrupts, do calibration, set/get TX power, configure beacon parameters, enter power saving/sleep mode, etc.)</p>
+        </blockquote>
+        <p>
+          It doesn't seem that it'll require any changes (except ah_osdep.c).
+        </p>
+        <p>
+          So, for example, athn.c has routines that directly change particular
+          registers (using <code>AR_WRITE</code> i.e. <code>sc_ops.write</code>
+          which might resolve to <code>athn_pci_write</code>), the lowest-level
+          routines being implemented in if_athn_pci.c & if_athn_cardbus.c,
+          whereas ath.c uses the higher-level routines already provided by the HAL.
+        </p>
+        <p>
+          <code>ath_softc</code> and <code>athn_softc</code> are the most
+          important structs in both, which, presumably, will have a few mutexes
+          on them when finished (as FreeBSD).  ath(4) seems to be the more
+          complicated of the two drivers.
+        </p>
+      </article>
+      <hr>
+      <article>
         <h2>Beginning GSoC 2023</h2>
         <p class="date">
           <time datetime="2023-05-10">10<sup>th</sup> May, 2023</time>
