@@ -14,6 +14,52 @@
     </header>
     <main>
       <article>
+	<h2>Basic differences in new drivers</h2>
+	<p class="date">
+	  <time datetime="2023-05-18">18<sup>th</sup> May, 2023</time>
+	</p>
+	<p>
+	  As noted by
+	  <a href="https://wiki.netbsd.org/Converting_drivers_to_the_new_wifi_stack/">
+	    Martin's guide</a>,
+	  the main difference in new style drivers is the VAP concept.  To that
+	  end FreeBSD ath(4) defines <code>struct ath_vap</code>, deriving from
+	  <code>struct ieee80211vap</code>.  So whereas before it would look
+	  something like this:
+	</p>
+	<img src="old.png" alt="Old representation" height="174">
+	<p>
+	  Now for any driver, the representation will look more or less like
+	  this: 
+	</p>
+	<img src="new.png" alt="New representation" height="294">
+	<p>
+	  By comparing with FreeBSD ath(4) & the new rtwn driver:
+	</p>
+	<ul>
+	  <li>
+	    Some new functions exist e.g. <code>ath_vap_create</code>,
+	    <code>ath_vap_delete</code>, <code>ath_parent</code>.
+	  </li>
+	  <li>
+	    Methods previously existing on the <code>struct ifnet</code> are
+	    gone, e.g. <code>if_start</code> (replaced by
+	    <code>ic_transmit</code>) <code>if_watchdog</code>,
+	    <code>if_ioctl</code> and <code>if_init</code>.
+	  </li>
+	  <li>
+	    Some methods previously existing on <code>struct ieee80211com</code>
+	    are shifted to the VAP e.g. <code>iv_recv_mgmt</code>,
+	    <code>iv_newstate</code>.
+	  </li>
+	  <li>
+	    <code>sc_ec</code> is gone (or rather never existed in FreeBSD).
+	    This only seems to affect the handling of multicast addresses.
+	  </li>
+	</ul>
+      </article>
+      <hr>
+      <article>
         <h2>Basic differences (ath vs athn)</h2>
         <p class="date">
           <time datetime="2023-05-12">12<sup>th</sup> May, 2023</time>
