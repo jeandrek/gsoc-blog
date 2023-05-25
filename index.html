@@ -14,6 +14,33 @@
     </header>
     <main>
       <article>
+        <h2>Getting started trying stuff out</h2>
+        <p class="date">
+          <time datetime="2023-05-25">25<sup>th</sup> May, 2023</time>
+        </p>
+        <p>
+          Trying to build athn(4) on the wifi topic results in lost of errors
+          in multiple arnXXXX.c files.  Trying to build ath(4) on the other hand
+          seemed to result in fewer errors.  So it might be better to convert
+          ath first.
+        </p>
+        <p>
+          I substituted <code>ic_macaddr</code> for <code>ic_myaddr</code>;
+          made <code>newstate</code> take a VAP; replaced
+          <code>ic->ic_ifp->if_softc</code> with <code>ic->ic_softc</code>;
+          changed some other references; haphazardly disabled swathes of
+          (important) code (a lot of important functions); and added a
+          few random stopgaps.  Eventually it compiled without error;
+          <code>ieee80211_ifattach</code> panicked but taking the contents of
+          <code>rtwn_get_radiocaps</code> served as a stopgap.  Thus it was
+          able to boot, and <code>ath0</code> was shown by sysctl.
+        </p>
+        <p>
+          Creating a VAP with ifconfig is (unsurprisingly) still far away (it
+          reported "STA mode not supported").
+        </p>
+      </article>
+      <article>
 	<h2>Basic differences in new drivers</h2>
 	<p class="date">
 	  <time datetime="2023-05-18">18<sup>th</sup> May, 2023</time>
