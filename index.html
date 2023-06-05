@@ -14,6 +14,32 @@
     </header>
     <main>
       <article>
+	<h2>Creating a VAP & scanning</h2>
+	<p class="date">
+	  <time datetime="2023-06-05">5<sup>th</sup> June, 2023</time>
+	</p>
+	<p>
+	  The code is now on
+	  <a href="https://github.com/Jonathan50/netbsd-src-gsoc">GitHub</a>.
+	  Re-enabling code, adjusting as necessary and incorporating some bits
+	  from FreeBSD brought the driver to the
+	  <a href="http://mail-index.netbsd.org/tech-net/2023/06/02/msg008517.html">
+	    point</a>
+	  (around last Friday) where one can create a VAP and scan for
+	  networks.  Since then adding <code>ath_recv_mgmt</code> back seems
+	  to have somehow made scanning faster (&hellip;or maybe it didn't
+	  really).  I have not yet been able to join a network with
+	  wpa_supplicant, and there's still a lot that I might need to try to
+	  better understand.
+	</p>
+	<pre>Successfully initialized wpa_supplicant
+ioctl[SIOCS80211, op=26, val=3, arg_len=0]: Operation not supported
+wpa_driver_bsd_scan: failed to set wpa: Operation not supported
+wlan0: CTRL-EVENT-SCAN-FAILED ret=-1 retry=1
+&lt;etc.&gt;</pre>
+      </article>
+      <hr>
+      <article>
         <h2>Getting started trying stuff out</h2>
         <p class="date">
           <time datetime="2023-05-25">25<sup>th</sup> May, 2023</time>
