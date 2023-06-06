@@ -42,15 +42,12 @@
 	  The code is now on
 	  <a href="https://github.com/Jonathan50/netbsd-src-gsoc">GitHub</a>.
 	  Re-enabling code, adjusting as necessary and incorporating some bits
-	  from FreeBSD brought the driver to the
-	  <a href="http://mail-index.netbsd.org/tech-net/2023/06/02/msg008517.html">
-	    point</a>
-	  (around last Friday) where one can create a VAP and scan for
-	  networks.  Since then adding <code>ath_recv_mgmt</code> back seems
-	  to have somehow made scanning faster (&hellip;or maybe it didn't
-	  really).  I have not yet been able to join a network with
-	  wpa_supplicant, and there's still a lot that I might need to try to
-	  better understand.
+	  from FreeBSD brought the driver to the point (around last Friday [per
+	  my report on tech-net]) where one can create a VAP and scan for
+	  networks.  Since then adding <code>ath_recv_mgmt</code> back seems to
+	  have somehow made scanning faster (&hellip;or maybe it didn't really).
+	  I have not yet been able to join a network with wpa_supplicant, and
+	  there's still a lot that I might need to try to better understand.
 	</p>
 	<pre>Successfully initialized wpa_supplicant
 ioctl[SIOCS80211, op=26, val=3, arg_len=0]: Operation not supported
