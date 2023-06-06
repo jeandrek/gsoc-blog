@@ -14,6 +14,25 @@
     </header>
     <main>
       <article>
+	<h2>Wi-Fi working &ndash; ath(4)</h2>
+	<p class="date">
+	  <time datetime="2023-06-06">6<sup>th</sup> June, 2023</time>
+	</p>
+	<p>
+	  After making the code regarding getting channels behave (mostly)
+	  correctly, adding <code>IEEE80211_C_WPA</code> to
+	  <code>ic_caps</code>, and restoring/adjusting
+	  <code>athrate-sample.c</code>, wpa_supplicant connects to my network
+	  and Wi-Fi mostly works(!) ignoring some kernel messages about "bad
+	  rates."  Doubtless some things still need to be corrected.  mdnsd
+	  (Bonjour) causes an assertion to fail during some ioctl.
+	  wpa_supplicant also sometimes seems to crash the system based on the
+	  exact sequence of commands used to set Wi-Fi up, so I'll also
+	  need to perform some debugging.
+	</p>
+      </article>
+      <hr>
+      <article>
 	<h2>Creating a VAP & scanning</h2>
 	<p class="date">
 	  <time datetime="2023-06-05">5<sup>th</sup> June, 2023</time>
