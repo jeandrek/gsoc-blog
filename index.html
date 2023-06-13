@@ -14,6 +14,22 @@
     </header>
     <main>
       <article>
+	<h2>Fixes &ndash; ath(4)</h2>
+	<p class="date">
+	  <time datetime="2023-06-13">13<sup>th</sup> June, 2023</time>
+	</p>
+	<p>
+	  I couldn't reproduce the crash I thought was caused by wpa_supplicant
+	  mentioned in the last post.  However, it did tend to crash when
+	  streaming video for more than a few minutes.  <code>M_CLEARCTX</code>
+	  seemed to fix this, and it hasn't crashed since (ignoring mdnsd).
+	  Reenabling <code>ath_chan_change</code> fixed the "bad rate" messages
+	  reported by athrate-sample.  But reenabling <code>ath_watchdog</code>
+	  results in occasional "device timeouts."
+	</p>
+      </article>
+      <hr>
+      <article>
 	<h2>Wi-Fi working &ndash; ath(4)</h2>
 	<p class="date">
 	  <time datetime="2023-06-06">6<sup>th</sup> June, 2023</time>
