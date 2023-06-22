@@ -14,6 +14,29 @@
     </header>
     <main>
       <article>
+	<h2>encap/caps &ndash; ath(4)</h2>
+	<p class="date">
+	  <time datetime="2023-06-22">22<sup>nd</sup> June, 2023</time>
+	</p>
+	<p>
+	  Turns out I hadn't actually fixed that.  It happened whenever
+	  <code>ath_start</code> was invoked by the <code>ath_tx_proc</code>
+	  family (without <code>IEEE80211_TX_LOCK</code>) and then called
+	  <code>ieee80211_encap</code>.  Removing the call to
+	  <code>ieee80211_encap</code> would fix this as the call was
+	  <a href="https://cgit.freebsd.org/src/commit/sys/dev/ath/if_ath.c?id=339ccfb3918a44878a6c005a3db37155e4d1d142">
+	    hoisted up into net80211</a>; the only reason it worked previously
+	  was because I mixed up <code>ic_caps</code> with
+	  <code>ic_cryptocaps</code>.
+	</p>
+	<p>
+	  All of that is fixed now, except that if the code sets
+	  <code>ic_cryptocaps</code> then wifi no longer works; so for now it's
+	  0.  No crashes yet since.
+	</p>
+      </article>
+      <hr>
+      <article>
 	<h2>Fixes &ndash; ath(4)</h2>
 	<p class="date">
 	  <time datetime="2023-06-13">13<sup>th</sup> June, 2023</time>
