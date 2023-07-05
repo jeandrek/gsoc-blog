@@ -1,6 +1,6 @@
 diff -r 0762eeb7f168 sys/dev/cardbus/if_ath_cardbus.c
 --- a/sys/dev/cardbus/if_ath_cardbus.c	Tue Jun 27 22:42:06 2023 +1000
-+++ b/sys/dev/cardbus/if_ath_cardbus.c	Tue Jul 04 14:11:00 2023 +1200
++++ b/sys/dev/cardbus/if_ath_cardbus.c	Wed Jul 05 18:00:29 2023 +1200
 @@ -193,7 +193,6 @@
  
  	if (pmf_device_register(self,
@@ -11,7 +11,7 @@ diff -r 0762eeb7f168 sys/dev/cardbus/if_ath_cardbus.c
  		aprint_error_dev(self, "couldn't establish power handler\n");
 diff -r 0762eeb7f168 sys/dev/ic/ath.c
 --- a/sys/dev/ic/ath.c	Tue Jun 27 22:42:06 2023 +1000
-+++ b/sys/dev/ic/ath.c	Tue Jul 04 14:11:00 2023 +1200
++++ b/sys/dev/ic/ath.c	Wed Jul 05 18:00:29 2023 +1200
 @@ -122,30 +122,35 @@
  #define	HTOAH32(x)	(x)
  #endif
@@ -558,23 +558,42 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  #ifdef __NetBSD__
  	splx(s);
  #endif
-@@ -911,6 +968,7 @@
- static void
- ath_bmiss_proc(void *arg, int pending)
- {
-+#if 0
- 	struct ath_softc *sc = arg;
- 	struct ieee80211com *ic = &sc->sc_ic;
+@@ -916,31 +973,9 @@
  	NET_LOCK_GIANT_FUNC_INIT();
-@@ -941,6 +999,7 @@
- 		} else
- 			sc->sc_stats.ast_bmiss_phantom++;
- 	}
-+#endif
+ 
+ 	DPRINTF(sc, ATH_DEBUG_ANY, "%s: pending %u\n", __func__, pending);
+-	KASSERTMSG(ic->ic_opmode == IEEE80211_M_STA,
+-		"unexpect operating mode %u", ic->ic_opmode);
+-	if (ic->ic_state == IEEE80211_S_RUN) {
+-		u_int64_t lastrx = sc->sc_lastrx;
+-		u_int64_t tsf = ath_hal_gettsf64(sc->sc_ah);
+-
+-		DPRINTF(sc, ATH_DEBUG_BEACON,
+-		    "%s: tsf %" PRIu64 " lastrx %" PRId64
+-		    " (%" PRIu64 ") bmiss %u\n",
+-		    __func__, tsf, tsf - lastrx, lastrx,
+-		    ic->ic_bmisstimeout*1024);
+-		/*
+-		 * Workaround phantom bmiss interrupts by sanity-checking
+-		 * the time of our last rx'd frame.  If it is within the
+-		 * beacon miss interval then ignore the interrupt.  If it's
+-		 * truly a bmiss we'll get another interrupt soon and that'll
+-		 * be dispatched up for processing.
+-		 */
+-		if (tsf - lastrx > ic->ic_bmisstimeout*1024) {
+-			NET_LOCK_GIANT();
+-			ieee80211_beacon_miss(ic);
+-			NET_UNLOCK_GIANT();
+-		} else
+-			sc->sc_stats.ast_bmiss_phantom++;
+-	}
++	NET_LOCK_GIANT();
++	ieee80211_beacon_miss(ic);
++	NET_UNLOCK_GIANT();
  }
  
  static void
-@@ -948,12 +1007,11 @@
+@@ -948,12 +983,11 @@
  {
  #if 0
  	struct ath_softc *sc = arg;
@@ -588,7 +607,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  			hchan.channel, hchan.channelFlags, hchan.privFlags);
  		/*
  		 * Initiate channel change.
-@@ -976,7 +1034,7 @@
+@@ -976,7 +1010,7 @@
  		CHANNEL_ST,		/* IEEE80211_MODE_TURBO_A */
  		CHANNEL_108G		/* IEEE80211_MODE_TURBO_G */
  	};
@@ -597,7 +616,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  
  	KASSERTMSG(mode < N(modeflags), "unexpected phy mode %u", mode);
  	KASSERTMSG(modeflags[mode] != 0, "mode %u undefined", mode);
-@@ -984,28 +1042,20 @@
+@@ -984,28 +1018,20 @@
  #undef N
  }
  
@@ -630,7 +649,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		}
  	}
  }
-@@ -1013,15 +1063,11 @@
+@@ -1013,15 +1039,11 @@
  static int
  ath_init(struct ath_softc *sc)
  {
@@ -646,7 +665,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	if (device_is_active(sc->sc_dev)) {
  		s = splnet();
  	} else if (!pmf_device_subtree_resume(sc->sc_dev, &sc->sc_qual) ||
-@@ -1034,7 +1080,7 @@
+@@ -1034,7 +1056,7 @@
  	 * Stop anything previously setup.  This is safe
  	 * whether this is the first time through or not.
  	 */
@@ -655,7 +674,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  
  	/*
  	 * The basic interface to setting the hardware in a good
-@@ -1047,7 +1093,7 @@
+@@ -1047,7 +1069,7 @@
  	sc->sc_curchan.channel = ic->ic_curchan->ic_freq;
  	sc->sc_curchan.channelFlags = ath_chan2flags(ic, ic->ic_curchan);
  	if (!ath_hal_reset(ah, ic->ic_opmode, &sc->sc_curchan, AH_FALSE, &status)) {
@@ -664,7 +683,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  			status);
  		error = EIO;
  		goto done;
-@@ -1074,7 +1120,7 @@
+@@ -1074,7 +1096,7 @@
  	 * here except setup the interrupt mask.
  	 */
  	if ((error = ath_startrecv(sc)) != 0) {
@@ -673,7 +692,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		goto done;
  	}
  
-@@ -1092,9 +1138,6 @@
+@@ -1092,9 +1114,6 @@
  		sc->sc_imask |= HAL_INT_MIB;
  	ath_hal_intrset(ah, sc->sc_imask);
  
@@ -683,7 +702,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	/*
  	 * The hardware should be ready to go now so it's safe
  	 * to kick the 802.11 state machine as it's likely to
-@@ -1106,91 +1149,76 @@
+@@ -1106,91 +1125,76 @@
  		sc->sc_tx99->start(sc->sc_tx99);
  	else
  #endif
@@ -810,7 +829,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		    sc->sc_diversity);
  		sc->sc_diversity = ath_hal_getdiversity(ah);
  	}
-@@ -1204,9 +1232,8 @@
+@@ -1204,9 +1208,8 @@
   * to reset or reload hardware state.
   */
  int
@@ -821,7 +840,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	struct ieee80211com *ic = &sc->sc_ic;
  	struct ath_hal *ah = sc->sc_ah;
  	struct ieee80211_channel *c;
-@@ -1226,25 +1253,28 @@
+@@ -1226,25 +1229,28 @@
  	ath_settkipmic(sc);		/* configure TKIP MIC handling */
  	/* NB: indicate channel change so we do a full reset */
  	if (!ath_hal_reset(ah, ic->ic_opmode, &sc->sc_curchan, AH_TRUE, &status))
@@ -853,7 +872,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	return 0;
  }
  
-@@ -1264,7 +1294,7 @@
+@@ -1264,7 +1270,7 @@
  	while ((bf = STAILQ_FIRST(frags)) != NULL) {
  		STAILQ_REMOVE_HEAD(frags, bf_list);
  		STAILQ_INSERT_TAIL(&sc->sc_txbuf, bf, bf_list);
@@ -862,7 +881,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		ieee80211_node_decref(ni);
  	}
  }
-@@ -1287,7 +1317,7 @@
+@@ -1287,7 +1293,7 @@
  		if (bf == NULL) {	/* out of buffers, cleanup */
  			DPRINTF(sc, ATH_DEBUG_XMIT, "%s: out of xmit buffers\n",
  				__func__);
@@ -871,7 +890,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  			ath_txfrag_cleanup(sc, frags, ni);
  			break;
  		}
-@@ -1301,22 +1331,13 @@
+@@ -1301,22 +1307,13 @@
  }
  
  static void
@@ -895,7 +914,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	if (sc->sc_flags & ATH_KEY_UPDATING)
  		return;
  
-@@ -1333,136 +1354,50 @@
+@@ -1333,136 +1330,50 @@
  			DPRINTF(sc, ATH_DEBUG_XMIT, "%s: out of xmit buffers\n",
  				__func__);
  			sc->sc_stats.ast_tx_qstop++;
@@ -1066,7 +1085,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  			ATH_TXBUF_LOCK(sc);
  			STAILQ_INSERT_TAIL(&sc->sc_txbuf, bf, bf_list);
  			ath_txfrag_cleanup(sc, &frags, ni);
-@@ -1479,25 +1414,49 @@
+@@ -1479,25 +1390,49 @@
  			goto nextfrag;
  		}
  
@@ -1129,7 +1148,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  }
  
  #ifdef AR_DEBUG
-@@ -1799,10 +1758,10 @@
+@@ -1799,10 +1734,10 @@
   * 64 entries.
   */
  static int
@@ -1142,7 +1161,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  
  	/*
  	 * Group key allocation must be handled specially for
-@@ -1816,8 +1775,8 @@
+@@ -1816,8 +1751,8 @@
  	 * multi-station operation.
  	 */
  	if ((k->wk_flags & IEEE80211_KEY_GROUP) && !sc->sc_mcastkey) {
@@ -1153,7 +1172,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  			/* should not happen */
  			DPRINTF(sc, ATH_DEBUG_KEYCACHE,
  				"%s: bogus group key\n", __func__);
-@@ -1827,7 +1786,7 @@
+@@ -1827,7 +1762,7 @@
  		 * XXX we pre-allocate the global keys so
  		 * have no way to check if they've already been allocated.
  		 */
@@ -1162,7 +1181,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		return 1;
  	}
  
-@@ -1850,15 +1809,16 @@
+@@ -1850,15 +1785,16 @@
  	} else {
  		return key_alloc_single(sc, keyix, rxkeyix);
  	}
@@ -1181,7 +1200,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	struct ath_hal *ah = sc->sc_ah;
  	const struct ieee80211_cipher *cip = k->wk_cipher;
  	u_int keyix = k->wk_keyix;
-@@ -1901,16 +1861,15 @@
+@@ -1901,16 +1837,15 @@
   * slot(s) must already have been allocated by ath_key_alloc.
   */
  static int
@@ -1201,7 +1220,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  }
  
  /*
-@@ -1920,10 +1879,9 @@
+@@ -1920,10 +1855,9 @@
   * uses that originate in the driver.
   */
  static void
@@ -1214,7 +1233,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  
  	DPRINTF(sc, ATH_DEBUG_KEYCACHE, "%s:\n", __func__);
  #if 0
-@@ -1933,10 +1891,9 @@
+@@ -1933,10 +1867,9 @@
  }
  
  static void
@@ -1227,7 +1246,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  
  	DPRINTF(sc, ATH_DEBUG_KEYCACHE, "%s:\n", __func__);
  	sc->sc_flags &= ~ATH_KEY_UPDATING;
-@@ -1963,11 +1920,13 @@
+@@ -1963,11 +1896,10 @@
   *   - when scanning
   */
  static u_int32_t
@@ -1236,13 +1255,11 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  {
  	struct ieee80211com *ic = &sc->sc_ic;
  	struct ath_hal *ah = sc->sc_ah;
-+#if 0
- 	struct ifnet *ifp = &sc->sc_if;
-+#endif
+-	struct ifnet *ifp = &sc->sc_if;
  	u_int32_t rfilt;
  
  	rfilt = (ath_hal_getrxfilter(ah) & HAL_RX_FILTER_PHYERR)
-@@ -1975,59 +1934,32 @@
+@@ -1975,59 +1907,32 @@
  	if (ic->ic_opmode != IEEE80211_M_STA)
  		rfilt |= HAL_RX_FILTER_PROBEREQ;
  	if (ic->ic_opmode != IEEE80211_M_HOSTAP &&
@@ -1311,7 +1328,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	mfilt[0] = mfilt[1] = 0;
  	ETHER_LOCK(ec);
  	ETHER_FIRST_MULTI(estep, ec, enm);
-@@ -2050,10 +1982,56 @@
+@@ -2050,10 +1955,56 @@
  		ETHER_NEXT_MULTI(estep, enm);
  	}
  	ETHER_UNLOCK(ec);
@@ -1370,7 +1387,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  }
  
  /*
-@@ -2077,10 +2055,9 @@
+@@ -2077,10 +2028,9 @@
   * slot time based on the current setting.
   */
  static void
@@ -1383,7 +1400,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  
  	/*
  	 * When not coordinating the BSS, change the hardware
-@@ -2113,6 +2090,7 @@
+@@ -2113,6 +2063,7 @@
  /*
   * Setup the transmit queue parameters for the beacon queue.
   */
@@ -1391,7 +1408,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  static int
  ath_beaconq_config(struct ath_softc *sc)
  {
-@@ -2150,6 +2128,7 @@
+@@ -2150,6 +2101,7 @@
  	}
  #undef ATH_EXPONENT_TO_VALUE
  }
@@ -1399,7 +1416,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  
  /*
   * Allocate and setup an initial beacon frame.
-@@ -2157,7 +2136,6 @@
+@@ -2157,7 +2109,6 @@
  static int
  ath_beacon_alloc(struct ath_softc *sc, struct ieee80211_node *ni)
  {
@@ -1407,7 +1424,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	struct ath_buf *bf;
  	struct mbuf *m;
  	int error;
-@@ -2173,7 +2151,7 @@
+@@ -2173,7 +2124,7 @@
  	 * we assume the mbuf routines will return us something
  	 * with this alignment (perhaps should assert).
  	 */
@@ -1416,7 +1433,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	if (m == NULL) {
  		DPRINTF(sc, ATH_DEBUG_BEACON, "%s: cannot get mbuf\n",
  			__func__);
-@@ -2337,13 +2315,13 @@
+@@ -2337,13 +2288,13 @@
  	 */
  	m = bf->bf_m;
  	ncabq = ath_hal_numtxpending(ah, sc->sc_cabq->axq_qnum);
@@ -1432,7 +1449,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  			    "%s: bus_dmamap_load_mbuf failed, error %u\n",
  			    __func__, error);
  			return;
-@@ -2414,17 +2392,16 @@
+@@ -2414,17 +2365,16 @@
  ath_bstuck_proc(void *arg, int pending)
  {
  	struct ath_softc *sc = arg;
@@ -1452,7 +1469,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  #ifdef __NetBSD__
  	splx(s);
  #endif
-@@ -2469,6 +2446,7 @@
+@@ -2469,6 +2419,7 @@
  static void
  ath_beacon_config(struct ath_softc *sc)
  {
@@ -1460,7 +1477,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  #define	TSF_TO_TU(_h,_l) \
  	((((u_int32_t)(_h)) << 22) | (((u_int32_t)(_l)) >> 10))
  #define	FUDGE	2
-@@ -2635,6 +2613,7 @@
+@@ -2635,6 +2586,7 @@
  	sc->sc_syncbeacon = 0;
  #undef UNDEF
  #undef TSF_TO_TU
@@ -1468,7 +1485,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  }
  
  static int
-@@ -2644,7 +2623,6 @@
+@@ -2644,7 +2596,6 @@
  {
  #define	DS2PHYS(_dd, _ds) \
  	((_dd)->dd_desc_paddr + ((char *)(_ds) - (char *)(_dd)->dd_desc))
@@ -1476,7 +1493,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	struct ath_desc *ds;
  	struct ath_buf *bf;
  	int i, bsize, error;
-@@ -2664,7 +2642,7 @@
+@@ -2664,7 +2615,7 @@
  	    0, &dd->dd_dseg, 1, &dd->dd_dnseg, 0);
  
  	if (error != 0) {
@@ -1485,7 +1502,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  			"error %u\n", nbuf * ndesc, dd->dd_name, error);
  		goto fail0;
  	}
-@@ -2672,7 +2650,7 @@
+@@ -2672,7 +2623,7 @@
  	error = bus_dmamem_map(dd->dd_dmat, &dd->dd_dseg, dd->dd_dnseg,
  	    dd->dd_desc_len, (void **)&dd->dd_desc, BUS_DMA_COHERENT);
  	if (error != 0) {
@@ -1494,7 +1511,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		    nbuf * ndesc, dd->dd_name, error);
  		goto fail1;
  	}
-@@ -2681,7 +2659,7 @@
+@@ -2681,7 +2632,7 @@
  	error = bus_dmamap_create(dd->dd_dmat, dd->dd_desc_len, 1,
  	    dd->dd_desc_len, 0, BUS_DMA_NOWAIT, &dd->dd_dmamap);
  	if (error != 0) {
@@ -1503,7 +1520,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  			"error %u\n", dd->dd_name, error);
  		goto fail2;
  	}
-@@ -2689,7 +2667,7 @@
+@@ -2689,7 +2640,7 @@
  	error = bus_dmamap_load(dd->dd_dmat, dd->dd_dmamap, dd->dd_desc,
  	    dd->dd_desc_len, NULL, BUS_DMA_NOWAIT);
  	if (error != 0) {
@@ -1512,7 +1529,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  			dd->dd_name, error);
  		goto fail3;
  	}
-@@ -2713,7 +2691,7 @@
+@@ -2713,7 +2664,7 @@
  		error = bus_dmamap_create(sc->sc_dmat, MCLBYTES, ndesc,
  				MCLBYTES, 0, BUS_DMA_NOWAIT, &bf->bf_dmamap);
  		if (error != 0) {
@@ -1521,7 +1538,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  				"buffer %u, error %u\n", dd->dd_name, i, error);
  			ath_descdma_cleanup(sc, dd, head);
  			return error;
-@@ -2809,10 +2787,10 @@
+@@ -2809,10 +2760,10 @@
  }
  
  static struct ieee80211_node *
@@ -1535,7 +1552,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	const size_t space = sizeof(struct ath_node) + sc->sc_rc->arc_space;
  	struct ath_node *an;
  
-@@ -2821,7 +2799,6 @@
+@@ -2821,7 +2772,6 @@
  		/* XXX stat+msg */
  		return NULL;
  	}
@@ -1543,7 +1560,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	ath_rate_node_init(sc, an);
  
  	DPRINTF(sc, ATH_DEBUG_NODE, "%s: an %p\n", __func__, an);
-@@ -2832,7 +2809,7 @@
+@@ -2832,7 +2782,7 @@
  ath_node_free(struct ieee80211_node *ni)
  {
  	struct ieee80211com *ic = ni->ni_ic;
@@ -1552,7 +1569,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  
  	DPRINTF(sc, ATH_DEBUG_NODE, "%s: ni %p\n", __func__, ni);
  
-@@ -2840,26 +2817,6 @@
+@@ -2840,26 +2790,6 @@
  	sc->sc_node_free(ni);
  }
  
@@ -1579,7 +1596,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  static int
  ath_rxbuf_init(struct ath_softc *sc, struct ath_buf *bf)
  {
-@@ -2950,23 +2907,26 @@
+@@ -2950,23 +2880,26 @@
   * and to do ibss merges.
   */
  static void
@@ -1612,7 +1629,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  			/*
  			 * Resync beacon timers using the tsf of the beacon
  			 * frame we just received.
-@@ -2976,7 +2936,8 @@
+@@ -2976,7 +2909,8 @@
  		/* fall thru... */
  	case IEEE80211_FC0_SUBTYPE_PROBE_RESP:
  		if (ic->ic_opmode == IEEE80211_M_IBSS &&
@@ -1622,16 +1639,16 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  			u_int64_t tsf = ath_extend_tsf(rstamp,
  				ath_hal_gettsf64(sc->sc_ah));
  
-@@ -3028,7 +2989,7 @@
+@@ -3028,7 +2962,7 @@
  	/* XXX discard MIC errors on !data frames */
  	ni = ieee80211_find_rxnode_withkey(ic, (const struct ieee80211_frame_min *) wh, keyix);
  	if (ni != NULL) {
 -		ieee80211_notify_michael_failure(ic, wh, keyix);
-+		/* ieee80211_notify_michael_failure(ic, wh, keyix); */
++		ieee80211_notify_michael_failure(ni->ni_vap, wh, keyix);
  		ieee80211_free_node(ni);
  	}
  }
-@@ -3042,13 +3003,10 @@
+@@ -3042,13 +2976,10 @@
  	struct ath_softc *sc = arg;
  	struct ath_buf *bf;
  	struct ieee80211com *ic = &sc->sc_ic;
@@ -1646,7 +1663,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	u_int phyerr;
  	HAL_STATUS status;
  	int16_t nf;
-@@ -3059,11 +3017,11 @@
+@@ -3059,11 +2990,11 @@
  	NET_LOCK_GIANT();		/* XXX */
  
  	rxerr_tap =
@@ -1660,7 +1677,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		rxerr_tap |= HAL_RXERR_DECRYPT|HAL_RXERR_MIC;
  
  	DPRINTF(sc, ATH_DEBUG_RX_PROC, "%s: pending %u\n", __func__, npending);
-@@ -3073,7 +3031,7 @@
+@@ -3073,7 +3004,7 @@
  	do {
  		bf = STAILQ_FIRST(&sc->sc_rxbuf);
  		if (bf == NULL) {		/* NB: shouldn't happen */
@@ -1669,7 +1686,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  			break;
  		}
  		ds = bf->bf_desc;
-@@ -3083,7 +3041,7 @@
+@@ -3083,7 +3014,7 @@
  		}
  		m = bf->bf_m;
  		if (m == NULL) {		/* NB: shouldn't happen */
@@ -1678,7 +1695,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  			break;
  		}
  		/* XXX sync descriptor memory */
-@@ -3165,7 +3123,7 @@
+@@ -3165,7 +3096,7 @@
  						ds->ds_rxstat.rs_keyix-32 : ds->ds_rxstat.rs_keyix);
  				}
  			}
@@ -1687,7 +1704,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  			/*
  			 * Reject error frames, we normally don't want
  			 * to see them in monitor mode (in monitor mode
-@@ -3189,7 +3147,6 @@
+@@ -3189,7 +3120,6 @@
  		bus_dmamap_unload(sc->sc_dmat, bf->bf_dmamap);
  		bf->bf_m = NULL;
  
@@ -1695,7 +1712,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		len = ds->ds_rxstat.rs_datalen;
  		m->m_pkthdr.len = m->m_len = len;
  
-@@ -3244,7 +3201,7 @@
+@@ -3244,7 +3174,7 @@
  		}
  
  		if (IFF_DUMPPKTS(sc, ATH_DEBUG_RECV)) {
@@ -1704,7 +1721,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  				   sc->sc_hwmap[ds->ds_rxstat.rs_rate].ieeerate,
  				   ds->ds_rxstat.rs_rssi);
  		}
-@@ -3252,26 +3209,18 @@
+@@ -3252,26 +3182,18 @@
  		m_adj(m, -IEEE80211_CRC_LEN);
  
  		/*
@@ -1735,7 +1752,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		if (sc->sc_diversity) {
  			/*
  			 * When using fast diversity, change the default rx
-@@ -3292,11 +3241,15 @@
+@@ -3292,11 +3214,15 @@
  			 * is mainly for station mode where we depend on
  			 * periodic beacon frames to trigger the poll event.
  			 */
@@ -1751,7 +1768,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		}
  		/*
  		 * Arrange to update the last rx timestamp only for
-@@ -3319,12 +3272,6 @@
+@@ -3319,12 +3245,6 @@
  	if (ngood)
  		sc->sc_lastrx = tsf;
  
@@ -1764,7 +1781,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	NET_UNLOCK_GIANT();		/* XXX */
  #undef PA2DESC
  }
-@@ -3456,7 +3403,7 @@
+@@ -3456,7 +3376,7 @@
  static int
  ath_wme_update(struct ieee80211com *ic)
  {
@@ -1773,7 +1790,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  
  	return !ath_txq_update(sc, WME_AC_BE) ||
  	    !ath_txq_update(sc, WME_AC_BK) ||
-@@ -3612,9 +3559,9 @@
+@@ -3612,9 +3532,9 @@
  ath_tx_start(struct ath_softc *sc, struct ieee80211_node *ni, struct ath_buf *bf,
      struct mbuf *m0)
  {
@@ -1784,7 +1801,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	const struct chanAccParams *cap = &ic->ic_wme.wme_chanParams;
  	int i, error, iswep, ismcast, isfrag, ismrr;
  	int keyix, hdrlen, pktlen, try0;
-@@ -3632,7 +3579,7 @@
+@@ -3632,7 +3552,7 @@
  	u_int pri;
  
  	wh = mtod(m0, struct ieee80211_frame *);
@@ -1793,7 +1810,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	ismcast = IEEE80211_IS_MULTICAST(wh->i_addr1);
  	isfrag = m0->m_flags & M_FRAG;
  	hdrlen = ieee80211_anyhdrsize(wh);
-@@ -3651,7 +3598,7 @@
+@@ -3651,7 +3571,7 @@
  		 * frame. The only reason this can fail is because of an
  		 * unknown or unsupported cipher/key type.
  		 */
@@ -1802,7 +1819,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		if (k == NULL) {
  			/*
  			 * This can happen when the key is yanked after the
-@@ -3816,12 +3763,14 @@
+@@ -3816,12 +3736,14 @@
  			 * Check mcast rate setting in case it's changed.
  			 * XXX move out of fastpath
  			 */
@@ -1818,7 +1835,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  			txrate = rt->info[rix].rateCode;
  			try0 = 1;
  		} else {
-@@ -3836,7 +3785,7 @@
+@@ -3836,7 +3758,7 @@
  			flags |= HAL_TXDESC_NOACK;
  		break;
  	default:
@@ -1827,7 +1844,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  			wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK, __func__);
  		/* XXX statistic */
  		ath_freetx(m0);
-@@ -3849,7 +3798,7 @@
+@@ -3849,7 +3771,7 @@
  	 * multicast frames must be buffered until after the beacon.
  	 * We use the CAB queue for that.
  	 */
@@ -1836,7 +1853,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		txq = sc->sc_cabq;
  		/* XXX? more bit in 802.11 frame header */
  	}
-@@ -3859,7 +3808,7 @@
+@@ -3859,7 +3781,7 @@
  	 */
  	if (ismcast) {
  		flags |= HAL_TXDESC_NOACK;	/* no ack on broad/multicast */
@@ -1845,7 +1862,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		flags |= HAL_TXDESC_RTSENA;	/* RTS based on frame length */
  		cix = rt->info[rix].controlRate;
  		sc->sc_stats.ast_tx_rts++;
-@@ -3980,9 +3929,9 @@
+@@ -3980,9 +3902,9 @@
  		ctsrate = 0;
  
  	if (IFF_DUMPPKTS(sc, ATH_DEBUG_XMIT))
@@ -1857,7 +1874,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	if (sc->sc_drvbpf) {
  		u_int64_t tsf = ath_hal_gettsf64(ah);
  
-@@ -4190,25 +4139,17 @@
+@@ -4190,25 +4112,17 @@
  					nacked++;
  				ath_rate_tx_complete(sc, an, ds, ds0);
  			}
@@ -1885,7 +1902,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		ATH_TXBUF_UNLOCK(sc);
  	}
  	return nacked;
-@@ -4230,7 +4171,6 @@
+@@ -4230,7 +4144,6 @@
  ath_tx_proc_q0(void *arg, int npending)
  {
  	struct ath_softc *sc = arg;
@@ -1893,7 +1910,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  #ifdef __NetBSD__
  	int s;
  #endif
-@@ -4247,7 +4187,7 @@
+@@ -4247,7 +4160,7 @@
  #ifdef __NetBSD__
  	s = splnet();
  #endif
@@ -1902,7 +1919,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  #ifdef __NetBSD__
  	splx(s);
  #endif
-@@ -4261,7 +4201,6 @@
+@@ -4261,7 +4174,6 @@
  ath_tx_proc_q0123(void *arg, int npending)
  {
  	struct ath_softc *sc = arg;
@@ -1910,7 +1927,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	int nacked;
  #ifdef __NetBSD__
  	int s;
-@@ -4291,7 +4230,7 @@
+@@ -4291,7 +4203,7 @@
  #ifdef __NetBSD__
  	s = splnet();
  #endif
@@ -1919,7 +1936,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  #ifdef __NetBSD__
  	splx(s);
  #endif
-@@ -4304,7 +4243,6 @@
+@@ -4304,7 +4216,6 @@
  ath_tx_proc(void *arg, int npending)
  {
  	struct ath_softc *sc = arg;
@@ -1927,7 +1944,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	int i, nacked;
  #ifdef __NetBSD__
  	int s;
-@@ -4327,7 +4265,7 @@
+@@ -4327,7 +4238,7 @@
  #ifdef __NetBSD__
  	s = splnet();
  #endif
@@ -1936,7 +1953,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  #ifdef __NetBSD__
  	splx(s);
  #endif
-@@ -4361,19 +4299,13 @@
+@@ -4361,19 +4272,13 @@
  				ath_hal_txprocdesc(ah, bf->bf_desc,
  					&ds->ds_txstat) == HAL_OK);
  		bus_dmamap_unload(sc->sc_dmat, bf->bf_dmamap);
@@ -1959,7 +1976,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		ATH_TXBUF_UNLOCK(sc);
  	}
  }
-@@ -4482,7 +4414,6 @@
+@@ -4482,7 +4387,6 @@
  static void
  ath_chan_change(struct ath_softc *sc, struct ieee80211_channel *chan)
  {
@@ -1967,7 +1984,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	enum ieee80211_phymode mode;
  	u_int16_t flags;
  
-@@ -4490,7 +4421,7 @@
+@@ -4490,7 +4394,7 @@
  	 * Change channels and update the h/w rate map
  	 * if we're switching; e.g. 11a to 11b/g.
  	 */
@@ -1976,7 +1993,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	if (mode != sc->sc_curmode)
  		ath_setcurmode(sc, mode);
  	/*
-@@ -4505,7 +4436,8 @@
+@@ -4505,7 +4409,8 @@
  		flags = IEEE80211_CHAN_G;
  	else
  		flags = IEEE80211_CHAN_B;
@@ -1986,7 +2003,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		flags |= IEEE80211_CHAN_TURBO;
  	sc->sc_tx_th.wt_chan_freq = sc->sc_rx_th.wr_chan_freq =
  		htole16(chan->ic_freq);
-@@ -4528,7 +4460,7 @@
+@@ -4528,7 +4433,7 @@
  
  	ath_hal_radar_wait(ah, &hchan);
  	if (hchan.privFlags & CHANNEL_INTERFERENCE) {
@@ -1995,7 +2012,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		    "channel %u/0x%x/0x%x has interference\n",
  		    hchan.channel, hchan.channelFlags, hchan.privFlags);
  		return;
-@@ -4539,8 +4471,8 @@
+@@ -4539,8 +4444,8 @@
  	}
  	if (hchan.privFlags & CHANNEL_DFS_CLEAR) {
  		sc->sc_curchan.privFlags |= CHANNEL_DFS_CLEAR;
@@ -2006,7 +2023,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		    "channel %u/0x%x/0x%x marked clear\n",
  		    hchan.channel, hchan.channelFlags, hchan.privFlags);
  	} else
-@@ -4591,7 +4523,7 @@
+@@ -4591,7 +4496,7 @@
  		ath_draintxq(sc);		/* clear pending tx frames */
  		ath_stoprecv(sc);		/* turn off frame recv */
  		if (!ath_hal_reset(ah, ic->ic_opmode, &hchan, AH_TRUE, &status)) {
@@ -2015,7 +2032,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  			    "channel %u (%u MHz, flags 0x%x hal flags 0x%x)\n",
  			    __func__, ieee80211_chan2ieee(ic, chan),
  			    chan->ic_freq, chan->ic_flags, hchan.channelFlags);
-@@ -4607,7 +4539,7 @@
+@@ -4607,7 +4512,7 @@
  		 * Re-enable rx framework.
  		 */
  		if (ath_startrecv(sc) != 0) {
@@ -2024,7 +2041,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  				"%s: unable to restart recv logic\n", __func__);
  			return EIO;
  		}
-@@ -4616,7 +4548,7 @@
+@@ -4616,7 +4521,7 @@
  		 * Change channels and update the h/w rate map
  		 * if we're switching; e.g. 11a to 11b/g.
  		 */
@@ -2033,7 +2050,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		ath_chan_change(sc, chan);
  
  #if 0
-@@ -4628,10 +4560,10 @@
+@@ -4628,10 +4533,10 @@
  #define	DFS_AND_NOT_CLEAR(_c) \
  	(((_c)->privFlags & (CHANNEL_DFS | CHANNEL_DFS_CLEAR)) == CHANNEL_DFS)
  			if (DFS_AND_NOT_CLEAR(&sc->sc_curchan)) {
@@ -2046,7 +2063,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  				callout_reset(&sc->sc_dfs_ch,
  					2 * hz, ath_dfswait, sc);
  			} else
-@@ -4651,6 +4583,7 @@
+@@ -4651,6 +4556,7 @@
  static void
  ath_next_scan(void *arg)
  {
@@ -2054,7 +2071,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	struct ath_softc *sc = arg;
  	struct ieee80211com *ic = &sc->sc_ic;
  	int s;
-@@ -4661,6 +4594,7 @@
+@@ -4661,6 +4567,7 @@
  	if (ic->ic_state == IEEE80211_S_SCAN)
  		ieee80211_next_scan(ic);
  	splx(s);
@@ -2062,7 +2079,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  }
  
  /*
-@@ -4687,7 +4621,7 @@
+@@ -4687,7 +4594,7 @@
  		DPRINTF(sc, ATH_DEBUG_CALIBRATE,
  			"%s: rfgain change\n", __func__);
  		sc->sc_stats.ast_per_rfgain++;
@@ -2071,7 +2088,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	}
  	if (!ath_hal_calibrate(ah, &sc->sc_curchan, &iqCalDone)) {
  		DPRINTF(sc, ATH_DEBUG_ANY,
-@@ -4727,11 +4661,63 @@
+@@ -4727,11 +4634,63 @@
  	splx(s);
  }
  
@@ -2139,7 +2156,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	struct ath_hal *ah = sc->sc_ah;
  	struct ieee80211_node *ni;
  	int i, error;
-@@ -4746,7 +4732,7 @@
+@@ -4746,7 +4705,7 @@
  	};
  
  	DPRINTF(sc, ATH_DEBUG_STATE, "%s: %s -> %s\n", __func__,
@@ -2148,7 +2165,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		ieee80211_state_name[nstate]);
  
  	callout_stop(&sc->sc_scan_ch);
-@@ -4754,6 +4740,7 @@
+@@ -4754,6 +4713,7 @@
  #if 0
  	callout_stop(&sc->sc_dfs_ch);
  #endif
@@ -2156,7 +2173,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	ath_hal_setledstate(ah, leds[nstate]);	/* set LED */
  
  	if (nstate == IEEE80211_S_INIT) {
-@@ -4765,25 +4752,27 @@
+@@ -4765,25 +4725,27 @@
  		/*
  		 * Notify the rate control algorithm.
  		 */
@@ -2190,7 +2207,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		ath_hal_setassocid(ah, bssid, 0);
  	if (ic->ic_flags & IEEE80211_F_PRIVACY) {
  		for (i = 0; i < IEEE80211_WEP_NKID; i++)
-@@ -4795,7 +4784,7 @@
+@@ -4795,7 +4757,7 @@
  	 * Notify the rate control algorithm so rates
  	 * are setup should ath_beacon_alloc be called.
  	 */
@@ -2199,7 +2216,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  
  	if (ic->ic_opmode == IEEE80211_M_MONITOR) {
  		/* nothing to do */;
-@@ -4834,7 +4823,7 @@
+@@ -4834,7 +4796,7 @@
  			 * starting an ibss/bss so there's no need to delay.
  			 */
  			if (ic->ic_opmode == IEEE80211_M_IBSS &&
@@ -2208,7 +2225,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  				sc->sc_syncbeacon = 1;
  			else
  				ath_beacon_config(sc);
-@@ -4877,7 +4866,7 @@
+@@ -4877,7 +4839,7 @@
  	/*
  	 * Invoke the parent method to complete the work.
  	 */
@@ -2217,13 +2234,12 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	/*
  	 * Finally, start any timers.
  	 */
-@@ -4905,11 +4894,12 @@
+@@ -4905,11 +4867,11 @@
  static void
  ath_setup_stationkey(struct ieee80211_node *ni)
  {
 -	struct ieee80211com *ic = ni->ni_ic;
 -	struct ath_softc *sc = ic->ic_ifp->if_softc;
-+#if 0
 +	struct ieee80211vap *vap = ni->ni_vap;
 +	struct ath_softc *sc = vap->iv_ic->ic_softc;
  	ieee80211_keyix keyix, rxkeyix;
@@ -2233,18 +2249,16 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		/*
  		 * Key cache is full; we'll fall back to doing
  		 * the more expensive lookup in software.  Note
-@@ -4921,8 +4911,9 @@
+@@ -4921,7 +4883,7 @@
  		ni->ni_ucastkey.wk_keyix = keyix;
  		ni->ni_ucastkey.wk_rxkeyix = rxkeyix;
  		/* NB: this will create a pass-thru key entry */
 -		ath_keyset(sc, &ni->ni_ucastkey, ni->ni_macaddr, ic->ic_bss);
 +		ath_keyset(sc, &ni->ni_ucastkey, ni->ni_macaddr, vap->iv_bss);
  	}
-+#endif
  }
  
- /*
-@@ -4934,7 +4925,7 @@
+@@ -4934,61 +4896,60 @@
  ath_newassoc(struct ieee80211_node *ni, int isnew)
  {
  	struct ieee80211com *ic = ni->ni_ic;
@@ -2253,7 +2267,13 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  
  	ath_rate_newassoc(sc, ATH_NODE(ni), isnew);
  	if (isnew &&
-@@ -4946,49 +4937,50 @@
+-	    (ic->ic_flags & IEEE80211_F_PRIVACY) == 0 && sc->sc_hasclrkey) {
+-		KASSERTMSG(ni->ni_ucastkey.wk_keyix == IEEE80211_KEYIX_NONE,
+-		    "new assoc with a unicast key already setup (keyix %u)",
+-		    ni->ni_ucastkey.wk_keyix);
++	    (ic->ic_flags & IEEE80211_F_PRIVACY) == 0 && sc->sc_hasclrkey &&
++	    ni->ni_ucastkey.wk_keyix == IEEE80211_KEYIX_NONE) {
+ 		ath_setup_stationkey(ni);
  	}
  }
  
@@ -2323,7 +2343,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  				    "cannot be handled; ignored\n",
  				    ix, c->channel, c->channelFlags);
  			continue;
-@@ -4999,19 +4991,36 @@
+@@ -4999,19 +4960,36 @@
  		 * conversion can be removed once net80211 is updated
  		 * to understand static vs. dynamic turbo.
  		 */
@@ -2371,7 +2391,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  #undef COMPAT
  }
  
-@@ -5090,7 +5099,9 @@
+@@ -5090,7 +5068,9 @@
  	 * Fetch max tx power level for status requests.
  	 */
  	(void)ath_hal_getmaxtxpow(sc->sc_ah, &txpow);
@@ -2381,7 +2401,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  }
  
  static void
-@@ -5222,9 +5233,11 @@
+@@ -5222,9 +5202,11 @@
  	/*
  	 * Setup multicast rate state.
  	 */
@@ -2393,7 +2413,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	/* NB: caller is responsible for resetting rate control state */
  #undef N
  }
-@@ -5268,17 +5281,12 @@
+@@ -5268,17 +5250,12 @@
  #endif	/* AR_DEBUG */
  
  static void
@@ -2413,7 +2433,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  	for (i = 0; i < HAL_NUM_TX_QUEUES; i++) {
  		if (!ATH_TXQ_SETUP(sc, i))
  			continue;
-@@ -5288,21 +5296,22 @@
+@@ -5288,21 +5265,22 @@
  			;
  		else if (--axq->axq_timer == 0) {
  			ATH_TXQ_UNLOCK(axq);
@@ -2441,7 +2461,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  /*
   * Diagnostic interface to the HAL.  This is used by various
   * tools to do things like retrieve register contents for
-@@ -5449,7 +5458,9 @@
+@@ -5449,7 +5427,9 @@
  	return error;
  #undef IS_RUNNING
  }
@@ -2452,7 +2472,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  static void
  ath_bpfattach(struct ath_softc *sc)
  {
-@@ -5476,6 +5487,7 @@
+@@ -5476,6 +5456,7 @@
  	sc->sc_rx_th.wr_ihdr.it_len = htole16(sc->sc_rx_th_len);
  	sc->sc_rx_th.wr_ihdr.it_present = htole32(ATH_RX_RADIOTAP_PRESENT);
  }
@@ -2460,7 +2480,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  
  /*
   * Announce various information on device/driver attach.
-@@ -5484,11 +5496,10 @@
+@@ -5484,11 +5465,10 @@
  ath_announce(struct ath_softc *sc)
  {
  #define	HAL_MODE_DUALBAND	(HAL_MODE_11A|HAL_MODE_11B)
@@ -2473,7 +2493,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  		ah->ah_macVersion, ah->ah_macRev,
  		ah->ah_phyRev >> 4, ah->ah_phyRev & 0xf);
  	/*
-@@ -5516,16 +5527,16 @@
+@@ -5516,16 +5496,16 @@
  		int i;
  		for (i = 0; i <= WME_AC_VO; i++) {
  			struct ath_txq *txq = sc->sc_ac2q[i];
@@ -2497,7 +2517,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath.c
  }
 diff -r 0762eeb7f168 sys/dev/ic/ath_netbsd.c
 --- a/sys/dev/ic/ath_netbsd.c	Tue Jun 27 22:42:06 2023 +1000
-+++ b/sys/dev/ic/ath_netbsd.c	Tue Jul 04 14:11:00 2023 +1200
++++ b/sys/dev/ic/ath_netbsd.c	Wed Jul 05 18:00:29 2023 +1200
 @@ -268,7 +268,7 @@
  		return error;
  	return !ath_hal_settpscale(sc->sc_ah, scale)
@@ -2613,7 +2633,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath_netbsd.c
  	return;
 diff -r 0762eeb7f168 sys/dev/ic/ath_netbsd.h
 --- a/sys/dev/ic/ath_netbsd.h	Tue Jun 27 22:42:06 2023 +1000
-+++ b/sys/dev/ic/ath_netbsd.h	Tue Jul 04 14:11:00 2023 +1200
++++ b/sys/dev/ic/ath_netbsd.h	Wed Jul 05 18:00:29 2023 +1200
 @@ -36,13 +36,13 @@
  
  #define ATH_CALLOUT_INIT(__ch, __mpsafe) callout_init((__ch), 0)
@@ -2655,7 +2675,7 @@ diff -r 0762eeb7f168 sys/dev/ic/ath_netbsd.h
  #define	SYSCTL_GLOBAL_INT(__rw, __name, __descr, __var)			\
 diff -r 0762eeb7f168 sys/dev/ic/athrate-sample.c
 --- a/sys/dev/ic/athrate-sample.c	Tue Jun 27 22:42:06 2023 +1000
-+++ b/sys/dev/ic/athrate-sample.c	Tue Jul 04 14:11:00 2023 +1200
++++ b/sys/dev/ic/athrate-sample.c	Wed Jul 05 18:00:29 2023 +1200
 @@ -648,14 +648,14 @@
  ath_rate_ctl_reset(struct ath_softc *sc, struct ieee80211_node *ni)
  {
@@ -2705,7 +2725,7 @@ diff -r 0762eeb7f168 sys/dev/ic/athrate-sample.c
  
 diff -r 0762eeb7f168 sys/dev/ic/athrate.h
 --- a/sys/dev/ic/athrate.h	Tue Jun 27 22:42:06 2023 +1000
-+++ b/sys/dev/ic/athrate.h	Tue Jul 04 14:11:00 2023 +1200
++++ b/sys/dev/ic/athrate.h	Wed Jul 05 18:00:29 2023 +1200
 @@ -111,7 +111,7 @@
   * Important mostly as the analog to ath_rate_newassoc when operating
   * in station mode.
@@ -2717,7 +2737,7 @@ diff -r 0762eeb7f168 sys/dev/ic/athrate.h
   * Transmit handling.
 diff -r 0762eeb7f168 sys/dev/ic/athvar.h
 --- a/sys/dev/ic/athvar.h	Tue Jun 27 22:42:06 2023 +1000
-+++ b/sys/dev/ic/athvar.h	Tue Jul 04 14:11:00 2023 +1200
++++ b/sys/dev/ic/athvar.h	Wed Jul 05 18:00:29 2023 +1200
 @@ -95,7 +95,6 @@
  /* driver-specific node state */
  struct ath_node {
@@ -2813,7 +2833,7 @@ diff -r 0762eeb7f168 sys/dev/ic/athvar.h
  extern int ath_dwelltime;
 diff -r 0762eeb7f168 sys/dev/pci/if_ath_pci.c
 --- a/sys/dev/pci/if_ath_pci.c	Tue Jun 27 22:42:06 2023 +1000
-+++ b/sys/dev/pci/if_ath_pci.c	Tue Jul 04 14:11:00 2023 +1200
++++ b/sys/dev/pci/if_ath_pci.c	Wed Jul 05 18:00:29 2023 +1200
 @@ -78,6 +78,7 @@
  
  #include <external/isc/atheros_hal/dist/ah.h>
@@ -2832,7 +2852,7 @@ diff -r 0762eeb7f168 sys/dev/pci/if_ath_pci.c
  		aprint_error_dev(self, "couldn't establish power handler\n");
 diff -r 0762eeb7f168 sys/external/isc/atheros_hal/dist/ah.h
 --- a/sys/external/isc/atheros_hal/dist/ah.h	Tue Jun 27 22:42:06 2023 +1000
-+++ b/sys/external/isc/atheros_hal/dist/ah.h	Tue Jul 04 14:11:00 2023 +1200
++++ b/sys/external/isc/atheros_hal/dist/ah.h	Wed Jul 05 18:00:29 2023 +1200
 @@ -462,10 +462,12 @@
  typedef uint16_t HAL_CTRY_CODE;		/* country code */
  typedef uint16_t HAL_REG_DOMAIN;		/* regulatory domain code */
