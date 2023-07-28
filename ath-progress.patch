@@ -1,6 +1,6 @@
 diff -r d6324adcc21f sys/dev/cardbus/if_ath_cardbus.c
 --- a/sys/dev/cardbus/if_ath_cardbus.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/cardbus/if_ath_cardbus.c	Thu Jul 27 18:28:08 2023 +1200
++++ b/sys/dev/cardbus/if_ath_cardbus.c	Fri Jul 28 12:42:23 2023 +1200
 @@ -193,7 +193,6 @@
  
  	if (pmf_device_register(self,
@@ -11,7 +11,7 @@ diff -r d6324adcc21f sys/dev/cardbus/if_ath_cardbus.c
  		aprint_error_dev(self, "couldn't establish power handler\n");
 diff -r d6324adcc21f sys/dev/ic/ath.c
 --- a/sys/dev/ic/ath.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/ath.c	Thu Jul 27 18:28:08 2023 +1200
++++ b/sys/dev/ic/ath.c	Fri Jul 28 12:42:23 2023 +1200
 @@ -122,48 +122,53 @@
  #define	HTOAH32(x)	(x)
  #endif
@@ -2573,7 +2573,7 @@ diff -r d6324adcc21f sys/dev/ic/ath.c
  }
 diff -r d6324adcc21f sys/dev/ic/ath_netbsd.c
 --- a/sys/dev/ic/ath_netbsd.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/ath_netbsd.c	Thu Jul 27 18:28:08 2023 +1200
++++ b/sys/dev/ic/ath_netbsd.c	Fri Jul 28 12:42:23 2023 +1200
 @@ -268,7 +268,7 @@
  		return error;
  	return !ath_hal_settpscale(sc->sc_ah, scale)
@@ -2689,7 +2689,7 @@ diff -r d6324adcc21f sys/dev/ic/ath_netbsd.c
  	return;
 diff -r d6324adcc21f sys/dev/ic/ath_netbsd.h
 --- a/sys/dev/ic/ath_netbsd.h	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/ath_netbsd.h	Thu Jul 27 18:28:08 2023 +1200
++++ b/sys/dev/ic/ath_netbsd.h	Fri Jul 28 12:42:23 2023 +1200
 @@ -36,13 +36,13 @@
  
  #define ATH_CALLOUT_INIT(__ch, __mpsafe) callout_init((__ch), 0)
@@ -2729,9 +2729,322 @@ diff -r d6324adcc21f sys/dev/ic/ath_netbsd.h
  	SYSCTL_PFX_INT(sc->sc_, __rw, __name, __descr)
  
  #define	SYSCTL_GLOBAL_INT(__rw, __name, __descr, __var)			\
+diff -r d6324adcc21f sys/dev/ic/athrate-amrr.c
+--- a/sys/dev/ic/athrate-amrr.c	Tue Jul 18 21:26:39 2023 +0200
++++ b/sys/dev/ic/athrate-amrr.c	Fri Jul 28 12:42:23 2023 +1200
+@@ -59,6 +59,7 @@
+ #include <sys/sysctl.h>
+ #include <sys/kernel.h>
+ #include <sys/errno.h>
++#include <sys/device.h>
+ #include <sys/bus.h>
+ #include <sys/socket.h>
+  
+@@ -75,6 +76,7 @@
+ #include <netinet/in.h> 
+ #endif
+ 
++#include "ah_desc.h"
+ #include <dev/ic/athvar.h>
+ #include <dev/ic/athrate-amrr.h>
+ 
+@@ -250,7 +252,7 @@
+ 				/* NB: only do this if we didn't already do it above */
+ 				amn->amn_tx_rate3 = rt->info[0].rateCode;
+ 				amn->amn_tx_rate3sp =
+-					an->an_tx_rate3 | rt->info[0].shortPreamble;
++					amn->amn_tx_rate3 | rt->info[0].shortPreamble;
+ 			} else {
+ 				amn->amn_tx_rate3 = amn->amn_tx_rate3sp = 0;
+ 			}
+@@ -277,11 +279,12 @@
+ ath_rate_ctl_start(struct ath_softc *sc, struct ieee80211_node *ni)
+ {
+ #define	RATE(_ix)	(ni->ni_rates.rs_rates[(_ix)] & IEEE80211_RATE_VAL)
+-	struct ieee80211com *ic = &sc->sc_ic;
+ 	int srate;
+ 
+ 	KASSERTMSG(ni->ni_rates.rs_nrates > 0, "no rates");
++#if 0
+ 	if (ic->ic_fixed_rate == IEEE80211_FIXED_RATE_NONE) {
++#endif
+ 		/*
+ 		 * No fixed rate is requested. For 11b start with
+ 		 * the highest negotiated rate; otherwise, for 11g
+@@ -298,6 +301,7 @@
+ 				;
+ 			KASSERTMSG(srate >= 0, "bogus rate set");
+ 		}
++#if 0
+ 	} else {
+ 		/*
+ 		 * A fixed rate is to be used; ic_fixed_rate is an
+@@ -316,6 +320,7 @@
+ 		KASSERTMSG(srate >= 0,
+ 			"fixed rate %d not in rate set", ic->ic_fixed_rate);
+ 	}
++#endif
+ 	ath_rate_update(sc, ni, srate);
+ #undef RATE
+ }
+@@ -332,10 +337,11 @@
+  * Reset the rate control state for each 802.11 state transition.
+  */
+ void
+-ath_rate_newstate(struct ath_softc *sc, enum ieee80211_state state)
++ath_rate_newstate(struct ieee80211vap *vap, enum ieee80211_state state)
+ {
++	struct ieee80211com *ic = vap->iv_ic;
++	struct ath_softc *sc = ic->ic_softc;
+ 	struct amrr_softc *asc = (struct amrr_softc *) sc->sc_rc;
+-	struct ieee80211com *ic = &sc->sc_ic;
+ 	struct ieee80211_node *ni;
+ 
+ 	if (state == IEEE80211_S_INIT) {
+@@ -347,7 +353,7 @@
+ 		 * Reset local xmit state; this is really only
+ 		 * meaningful when operating in station mode.
+ 		 */
+-		ni = ic->ic_bss;
++		ni = vap->iv_bss;
+ 		if (state == IEEE80211_S_RUN) {
+ 			ath_rate_ctl_start(sc, ni);
+ 		} else {
+@@ -361,10 +367,14 @@
+ 		 * tx rate state of each node.
+ 		 */
+ 		ieee80211_iterate_nodes(&ic->ic_sta, ath_rate_cb, sc);
+-		ath_rate_update(sc, ic->ic_bss, 0);
++		ath_rate_update(sc, vap->iv_bss, 0);
+ 	}
++#if 0
+ 	if (ic->ic_fixed_rate == IEEE80211_FIXED_RATE_NONE &&
+ 	    state == IEEE80211_S_RUN) {
++#else
++	if (state == IEEE80211_S_RUN) {
++#endif
+ 		int interval;
+ 		/*
+ 		 * Start the background rate control thread if we
+@@ -374,7 +384,7 @@
+ 		if (ic->ic_opmode == IEEE80211_M_STA)
+ 			interval /= 2;
+ 		callout_reset(&asc->timer, (interval * hz) / 1000,
+-			ath_ratectl, &sc->sc_if);
++			ath_ratectl, sc);
+ 	}
+ }
+ 
+@@ -424,8 +434,9 @@
+   			if (amn->amn_recovery) {
+   				/* recovery failure. */
+   				amn->amn_success_threshold *= 2;
+-  				amn->amn_success_threshold = min (amn->amn_success_threshold,
+-								  (u_int)ath_rate_max_success_threshold);
++  				amn->amn_success_threshold =
++					MIN(amn->amn_success_threshold,
++					 (u_int)ath_rate_max_success_threshold);
+  				DPRINTF (sc, "decrease rate recovery thr: %d\n", amn->amn_success_threshold);
+   			} else {
+   				/* simple failure. */
+@@ -455,43 +466,49 @@
+ static void
+ ath_ratectl(void *arg)
+ {
+-	struct ifnet *ifp = arg;
+-	struct ath_softc *sc = ifp->if_softc;
++	struct ath_softc *sc = arg;
+ 	struct amrr_softc *asc = (struct amrr_softc *) sc->sc_rc;
+ 	struct ieee80211com *ic = &sc->sc_ic;
+ 	int interval;
+ 
+-	if (ifp->if_drv_flags & IFF_DRV_RUNNING) {
++	if (ic->ic_nrunning > 0) {
+ 		sc->sc_stats.ast_rate_calls++;
+ 
+-		if (ic->ic_opmode == IEEE80211_M_STA)
++		if (ic->ic_opmode == IEEE80211_M_STA) {
++#if 0
+ 			ath_rate_ctl(sc, ic->ic_bss);	/* NB: no reference */
+-		else
++#else
++			struct ieee80211vap *vap;
++
++			TAILQ_FOREACH(vap, &ic->ic_vaps, iv_next)
++				ath_rate_ctl(sc, vap->iv_bss);
++#endif
++		} else
+ 			ieee80211_iterate_nodes(&ic->ic_sta, ath_rate_ctl, sc);
+ 	}
+ 	interval = ath_rateinterval;
+ 	if (ic->ic_opmode == IEEE80211_M_STA)
+ 		interval /= 2;
+ 	callout_reset(&asc->timer, (interval * hz) / 1000,
+-		ath_ratectl, &sc->sc_if);
++		ath_ratectl, sc);
+ }
+ 
+ static void
+ ath_rate_sysctlattach(struct ath_softc *sc)
+ {
+-	struct sysctl_ctx_list *ctx = device_get_sysctl_ctx(sc->sc_dev);
+-	struct sysctl_oid *tree = device_get_sysctl_tree(sc->sc_dev);
++	struct sysctllog **clog = &sc->sc_sysctllog;
++	const struct sysctlnode *cnode, *rnode;
+ 
+-	SYSCTL_ADD_INT(ctx, SYSCTL_CHILDREN(tree), OID_AUTO,
+-		"rate_interval", CTLFLAG_RW, &ath_rateinterval, 0,
+-		"rate control: operation interval (ms)");
++	if ((rnode = ath_sysctl_treetop(NULL)) == NULL)
++		return;
++
++	SYSCTL_GLOBAL_INT(CTLFLAG_READWRITE, "rate_interval",
++	    "rate control: operation interval (ms)", rateinterval);
+ 	/* XXX bounds check values */
+-	SYSCTL_ADD_INT(ctx, SYSCTL_CHILDREN(tree), OID_AUTO,
+-		"max_sucess_threshold", CTLFLAG_RW,
+-		&ath_rate_max_success_threshold, 0, "");
+-	SYSCTL_ADD_INT(ctx, SYSCTL_CHILDREN(tree), OID_AUTO,
+-		"min_sucess_threshold", CTLFLAG_RW,
+-		&ath_rate_min_success_threshold, 0, "");
++	SYSCTL_GLOBAL_INT(CTLFLAG_READWRITE, "max_success_threshold",
++	    "rate control: max success threshold", rate_max_success_threshold);
++	SYSCTL_GLOBAL_INT(CTLFLAG_READWRITE, "min_success_threshold",
++	    "rate control: min success threshold", rate_min_success_threshold);
+ }
+ 
+ struct ath_ratectrl *
+@@ -501,7 +518,7 @@
+ 
+ 	asc = malloc(sizeof(struct amrr_softc), M_DEVBUF, M_WAITOK|M_ZERO);
+ 	asc->arc.arc_space = sizeof(struct amrr_node);
+-	callout_init(&asc->timer, debug_mpsafenet ? CALLOUT_MPSAFE : 0);
++	callout_init(&asc->timer, 0);
+ 	ath_rate_sysctlattach(sc);
+ 
+ 	return &asc->arc;
+diff -r d6324adcc21f sys/dev/ic/athrate-onoe.c
+--- a/sys/dev/ic/athrate-onoe.c	Tue Jul 18 21:26:39 2023 +0200
++++ b/sys/dev/ic/athrate-onoe.c	Fri Jul 28 12:42:23 2023 +1200
+@@ -267,11 +267,12 @@
+ ath_rate_ctl_start(struct ath_softc *sc, struct ieee80211_node *ni)
+ {
+ #define	RATE(_ix)	(ni->ni_rates.rs_rates[(_ix)] & IEEE80211_RATE_VAL)
+-	struct ieee80211com *ic = &sc->sc_ic;
+ 	int srate;
+ 
+ 	KASSERTMSG(ni->ni_rates.rs_nrates > 0, "no rates");
++#if 0
+ 	if (ic->ic_fixed_rate == IEEE80211_FIXED_RATE_NONE) {
++#endif
+ 		/*
+ 		 * No fixed rate is requested. For 11b start with
+ 		 * the highest negotiated rate; otherwise, for 11g
+@@ -288,6 +289,7 @@
+ 				;
+ 			KASSERTMSG(srate >= 0, "bogus rate set");
+ 		}
++#if 0
+ 	} else {
+ 		/*
+ 		 * A fixed rate is to be used; ic_fixed_rate is an
+@@ -306,6 +308,7 @@
+ 		KASSERTMSG(srate >= 0,
+ 			"fixed rate %d not in rate set", ic->ic_fixed_rate);
+ 	}
++#endif
+ 	ath_rate_update(sc, ni, srate);
+ #undef RATE
+ }
+@@ -322,10 +325,11 @@
+  * Reset the rate control state for each 802.11 state transition.
+  */
+ void
+-ath_rate_newstate(struct ath_softc *sc, enum ieee80211_state state)
++ath_rate_newstate(struct ieee80211vap *vap, enum ieee80211_state state)
+ {
++	struct ieee80211com *ic = vap->iv_ic;
++	struct ath_softc *sc = ic->ic_softc;
+ 	struct onoe_softc *osc = (struct onoe_softc *) sc->sc_rc;
+-	struct ieee80211com *ic = &sc->sc_ic;
+ 	struct ieee80211_node *ni;
+ 
+ 	if (state == IEEE80211_S_INIT) {
+@@ -337,7 +341,7 @@
+ 		 * Reset local xmit state; this is really only
+ 		 * meaningful when operating in station mode.
+ 		 */
+-		ni = ic->ic_bss;
++		ni = vap->iv_bss;
+ 		if (state == IEEE80211_S_RUN) {
+ 			ath_rate_ctl_start(sc, ni);
+ 		} else {
+@@ -351,10 +355,14 @@
+ 		 * tx rate state of each node.
+ 		 */
+ 		ieee80211_iterate_nodes(&ic->ic_sta, ath_rate_cb, sc);
+-		ath_rate_update(sc, ic->ic_bss, 0);
++		ath_rate_update(sc, vap->iv_bss, 0);
+ 	}
++#if 0
+ 	if (ic->ic_fixed_rate == IEEE80211_FIXED_RATE_NONE &&
+ 	    state == IEEE80211_S_RUN) {
++#else
++	if (state == IEEE80211_S_RUN) {
++#endif
+ 		int interval;
+ 		/*
+ 		 * Start the background rate control thread if we
+@@ -364,7 +372,7 @@
+ 		if (ic->ic_opmode == IEEE80211_M_STA)
+ 			interval /= 2;
+ 		callout_reset(&osc->timer, (interval * hz) / 1000,
+-			ath_ratectl, &sc->sc_if);
++			ath_ratectl, sc);
+ 	}
+ }
+ 
+@@ -442,25 +450,31 @@
+ static void
+ ath_ratectl(void *arg)
+ {
+-	struct ifnet *ifp = arg;
+-	struct ath_softc *sc = ifp->if_softc;
++	struct ath_softc *sc = arg;
+ 	struct onoe_softc *osc = (struct onoe_softc *) sc->sc_rc;
+ 	struct ieee80211com *ic = &sc->sc_ic;
+ 	int interval;
+ 
+-	if (ifp->if_flags & IFF_RUNNING) {
++	if (ic->ic_nrunning > 0) {
+ 		sc->sc_stats.ast_rate_calls++;
+ 
+-		if (ic->ic_opmode == IEEE80211_M_STA)
++		if (ic->ic_opmode == IEEE80211_M_STA) {
++#if 0
+ 			ath_rate_ctl(sc, ic->ic_bss);	/* NB: no reference */
+-		else
++#else
++			struct ieee80211vap *vap;
++
++			TAILQ_FOREACH(vap, &ic->ic_vaps, iv_next)
++				ath_rate_ctl(sc, vap->iv_bss);
++#endif
++		} else
+ 			ieee80211_iterate_nodes(&ic->ic_sta, ath_rate_ctl, sc);
+ 	}
+ 	interval = ath_rateinterval;
+ 	if (ic->ic_opmode == IEEE80211_M_STA)
+ 		interval /= 2;
+ 	callout_reset(&osc->timer, (interval * hz) / 1000,
+-		ath_ratectl, &sc->sc_if);
++		ath_ratectl, sc);
+ }
+ 
+ static void
 diff -r d6324adcc21f sys/dev/ic/athrate-sample.c
 --- a/sys/dev/ic/athrate-sample.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/athrate-sample.c	Thu Jul 27 18:28:08 2023 +1200
++++ b/sys/dev/ic/athrate-sample.c	Fri Jul 28 12:42:23 2023 +1200
 @@ -648,14 +648,14 @@
  ath_rate_ctl_reset(struct ath_softc *sc, struct ieee80211_node *ni)
  {
@@ -2781,7 +3094,7 @@ diff -r d6324adcc21f sys/dev/ic/athrate-sample.c
  
 diff -r d6324adcc21f sys/dev/ic/athrate.h
 --- a/sys/dev/ic/athrate.h	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/athrate.h	Thu Jul 27 18:28:08 2023 +1200
++++ b/sys/dev/ic/athrate.h	Fri Jul 28 12:42:23 2023 +1200
 @@ -111,7 +111,7 @@
   * Important mostly as the analog to ath_rate_newassoc when operating
   * in station mode.
@@ -2793,7 +3106,7 @@ diff -r d6324adcc21f sys/dev/ic/athrate.h
   * Transmit handling.
 diff -r d6324adcc21f sys/dev/ic/athvar.h
 --- a/sys/dev/ic/athvar.h	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/athvar.h	Thu Jul 27 18:28:08 2023 +1200
++++ b/sys/dev/ic/athvar.h	Fri Jul 28 12:42:23 2023 +1200
 @@ -95,7 +95,6 @@
  /* driver-specific node state */
  struct ath_node {
@@ -2889,7 +3202,7 @@ diff -r d6324adcc21f sys/dev/ic/athvar.h
  extern int ath_dwelltime;
 diff -r d6324adcc21f sys/dev/pci/if_ath_pci.c
 --- a/sys/dev/pci/if_ath_pci.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/pci/if_ath_pci.c	Thu Jul 27 18:28:08 2023 +1200
++++ b/sys/dev/pci/if_ath_pci.c	Fri Jul 28 12:42:23 2023 +1200
 @@ -78,6 +78,7 @@
  
  #include <external/isc/atheros_hal/dist/ah.h>
@@ -2908,7 +3221,7 @@ diff -r d6324adcc21f sys/dev/pci/if_ath_pci.c
  		aprint_error_dev(self, "couldn't establish power handler\n");
 diff -r d6324adcc21f sys/external/isc/atheros_hal/dist/ah.h
 --- a/sys/external/isc/atheros_hal/dist/ah.h	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/external/isc/atheros_hal/dist/ah.h	Thu Jul 27 18:28:08 2023 +1200
++++ b/sys/external/isc/atheros_hal/dist/ah.h	Fri Jul 28 12:42:23 2023 +1200
 @@ -462,10 +462,12 @@
  typedef uint16_t HAL_CTRY_CODE;		/* country code */
  typedef uint16_t HAL_REG_DOMAIN;		/* regulatory domain code */
