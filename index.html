@@ -14,6 +14,25 @@
     </header>
     <main>
       <article>
+	<h2>Rate adaption &ndash; ath(4)</h2>
+	<p class="date">
+	  <time datetime="2023-07-28">28<sup>th</sup> July, 2023</time>
+	</p>
+	<p>
+	  Got athrate-amrr & athrate-onoe working (before I only had
+	  athrate-sample).  This was easy enough because everything
+	  rate-adaption-related is in a single driver-specific module (though
+	  ultimately it will probably be redundant because of net80211).
+	</p>
+	<p>
+	  <a href="https://cgit.freebsd.org/src/commit/sys/dev/ath/ath_rate/sample/sample.c?id=a6a308a4df69b5b9c7f7da2f06890b227015ba82">
+	    This commit</a>
+	  could be relevant to athrate-sample (then again net80211 may make it
+	  obsolete).
+	</p>
+      </article>
+      <hr>
+      <article>
 	<h2>athn(4) &ndash; starting over based on existing patch</h2>
 	<p class="date">
 	  <time datetime="2023-07-27">27<sup>th</sup> July, 2023</time>
