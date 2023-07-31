@@ -14,6 +14,132 @@
     </header>
     <main>
       <article>
+	<h2>Testing</h2>
+	<p class="date">
+	  <time datetime="2023-07-31">31<sup>st</sup> July, 2023</time>
+	</p>
+	<p>
+	  Here is some code to help confirm <code>get_radiocaps</code> behaves
+	  the same on the old & new wifi stack.  It may not be perfect but
+	  there is a slim chance someone could take advantage of it or improve
+	  it somehow.
+	</p>
+	<pre>static void
+chan_flags2string(char *str, uint32_t flags)
+{
+	const char *flag_names[] = {
+		"PRIV0", "PRIV1", "PRIV2", "PRIV3", "TURBO", "CCK", "OFDM",
+		"2GHZ", "5GHZ", "PASSIVE", "DYN", "GFSK", "GSM", "STURBO",
+		"HALF", "QUARTER", "HT20", "HT40U", "HT40D", "DFS",
+		"4MSXMIT", "NOADHOC", "NOHOSTAP", "11D", "VHT20", "VHT40U",
+		"VHT40D", "VHT80", "VHT80_80", "VHT160"
+	};
+	int pow = nitems(flag_names), i = 0;
+	memset(str, 0, 200);
+	do {
+		pow--;
+		if (flags & (1 << pow)) {
+			if (i != 0) str[i++] = ',';
+			strcat(str, flag_names[pow]);
+			i += strlen(flag_names[pow]);
+		}
+	} while (pow > 0);
+	str[i] = 0;
+}
+
+static void
+display_channels(struct ieee80211com *ic)
+{
+#define NEWSTACK
+	char flagstr[200];
+
+	printf("Channels by IEEE number:\n");
+#ifdef NEWSTACK
+	struct {uint16_t freq; uint32_t flags;} byieee[256] = {0};
+	for (int i = 0; i < ic->ic_nchans; i++) {
+		int n = ic->ic_channels[i].ic_ieee;
+		byieee[n].freq = ic->ic_channels[i].ic_freq;
+		byieee[n].flags |= ic->ic_channels[i].ic_flags;
+	}
+	for (int i = 0; i < 256; i++) {
+		if (byieee[i].flags != 0) {
+			chan_flags2string(flagstr, byieee[i].flags);
+			printf("%d\t%d\t%x\t%s\n", i,
+				byieee[i].freq,
+				byieee[i].flags, flagstr);
+		}
+	}
+#else
+	for (int i = 0; i < IEEE80211_CHAN_MAX; i++) {
+		if (ic->ic_channels[i].ic_freq != 0) {
+			chan_flags2string(flagstr, ic->ic_channels[i].ic_flags);
+			printf("%d\t%d\t%x\t%s\n", i,
+				ic->ic_channels[i].ic_freq,
+				ic->ic_channels[i].ic_flags, flagstr);
+		}
+	}
+#endif
+
+	printf("Channels per mode:\n");
+#ifdef NEWSTACK
+	for (int i = 0; i < ic->ic_nchans; i++) {
+		chan_flags2string(flagstr, ic->ic_channels[i].ic_flags);
+		printf("%d\t%d\t%x\t%s\n",
+			ic->ic_channels[i].ic_ieee,
+			ic->ic_channels[i].ic_freq,
+			ic->ic_channels[i].ic_flags, flagstr);
+	}
+#else
+#define ADDPERMODE(_i, _freq, _flags)		\
+	do {					\
+		permode[nchans].ieee = _i;	\
+		permode[nchans].freq = _freq;	\
+		permode[nchans].flags = _flag;	\
+		nchans++;			\
+	} while (0);
+	struct {
+		uint8_t ieee;
+		uint32_t flags;
+		uint16_t freq;
+	} *permode;
+	int nchans = 0;
+	permode = kmem_zalloc(1024*sizeof(*permode), KM_SLEEP);
+	for (int i = 0; i < IEEE80211_CHAN_MAX; i++) {
+		uint16_t freq = ic->ic_channels[i].ic_freq;
+		uint32_t flags = ic->ic_channels[i].ic_flags;
+		if (IEEE80211_IS_CHAN_A(&ic->ic_channels[i])) {
+			ADDPERMODE(i, freq, IEEE80211_CHAN_A);
+			if (flags & IEEE80211_CHAN_TURBO)
+				ADDPERMODE(i, freq,
+				    IEEE80211_CHAN_A | IEEE80211_CHAN_TURBO);
+		}
+		if (IEEE80211_IS_CHAN_B(&ic->ic_channels[i])) {
+			ADDPERMODE(i, freq, IEEE80211_CHAN_B);
+		}
+		if (IEEE80211_IS_CHAN_G(&ic->ic_channels[i])
+		    || IEEE80211_IS_CHAN_G(&ic->ic_channels[i])) {
+			ADDPERMODE(i, freq, IEEE80211_CHAN_G);
+			if (flags & IEEE80211_CHAN_TURBO)
+				ADDPERMODE(i, freq,
+				    IEEE80211_CHAN_G | IEEE80211_CHAN_TURBO);
+		}
+	}
+	for (int i = 0; i < nchans; i++) {
+		chan_flags2string(flagstr, permode[i].flags);
+		printf("%d\t%d\t%x\t%s\n",
+			permode[i].ieee,
+			permode[i].freq,
+			permode[i].flags, flagstr);
+	}
+	kmem_free(permode, 1024*sizeof(*permode));
+#undef ADDPERMODE
+#endif
+
+#undef NEWSTACK
+}</pre>
+      </article>
+      <hr>
+      <article>
 	<h2>Rate adaption &ndash; ath(4)</h2>
 	<p class="date">
 	  <time datetime="2023-07-28">28<sup>th</sup> July, 2023</time>
