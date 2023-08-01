@@ -1,6 +1,6 @@
 diff -r d6324adcc21f sys/dev/cardbus/if_athn_cardbus.c
 --- a/sys/dev/cardbus/if_athn_cardbus.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/cardbus/if_athn_cardbus.c	Tue Aug 01 19:48:40 2023 +1200
++++ b/sys/dev/cardbus/if_athn_cardbus.c	Wed Aug 02 11:26:01 2023 +1200
 @@ -179,7 +179,7 @@
  
  	if (pmf_device_register(self,
@@ -12,7 +12,7 @@ diff -r d6324adcc21f sys/dev/cardbus/if_athn_cardbus.c
  		aprint_error_dev(self, "couldn't establish power handler\n");
 diff -r d6324adcc21f sys/dev/ic/arn5008.c
 --- a/sys/dev/ic/arn5008.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/arn5008.c	Tue Aug 01 19:48:40 2023 +1200
++++ b/sys/dev/ic/arn5008.c	Wed Aug 02 11:26:01 2023 +1200
 @@ -56,8 +56,8 @@
  
  #include <net80211/ieee80211_netbsd.h>
@@ -497,7 +497,7 @@ diff -r d6324adcc21f sys/dev/ic/arn5008.c
  		else if ((ic->ic_flags & IEEE80211_F_USEPROT) &&
 diff -r d6324adcc21f sys/dev/ic/arn5416.c
 --- a/sys/dev/ic/arn5416.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/arn5416.c	Tue Aug 01 19:48:40 2023 +1200
++++ b/sys/dev/ic/arn5416.c	Wed Aug 02 11:26:01 2023 +1200
 @@ -56,8 +56,8 @@
  
  #include <net80211/ieee80211_netbsd.h>
@@ -510,7 +510,7 @@ diff -r d6324adcc21f sys/dev/ic/arn5416.c
  #include <dev/ic/athnreg.h>
 diff -r d6324adcc21f sys/dev/ic/arn9003.c
 --- a/sys/dev/ic/arn9003.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/arn9003.c	Tue Aug 01 19:48:40 2023 +1200
++++ b/sys/dev/ic/arn9003.c	Wed Aug 02 11:26:01 2023 +1200
 @@ -57,8 +57,8 @@
  
  #include <net80211/ieee80211_netbsd.h>
@@ -1123,7 +1123,7 @@ diff -r d6324adcc21f sys/dev/ic/arn9003.c
  ar9003_write_txpower(struct athn_softc *sc, int16_t power[ATHN_POWER_COUNT])
 diff -r d6324adcc21f sys/dev/ic/arn9280.c
 --- a/sys/dev/ic/arn9280.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/arn9280.c	Tue Aug 01 19:48:40 2023 +1200
++++ b/sys/dev/ic/arn9280.c	Wed Aug 02 11:26:01 2023 +1200
 @@ -56,8 +56,8 @@
  
  #include <net80211/ieee80211_netbsd.h>
@@ -1136,7 +1136,7 @@ diff -r d6324adcc21f sys/dev/ic/arn9280.c
  #include <dev/ic/athnreg.h>
 diff -r d6324adcc21f sys/dev/ic/arn9285.c
 --- a/sys/dev/ic/arn9285.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/arn9285.c	Tue Aug 01 19:48:40 2023 +1200
++++ b/sys/dev/ic/arn9285.c	Wed Aug 02 11:26:01 2023 +1200
 @@ -60,8 +60,8 @@
  
  #include <net80211/ieee80211_netbsd.h>
@@ -1149,7 +1149,7 @@ diff -r d6324adcc21f sys/dev/ic/arn9285.c
  #include <dev/ic/athnreg.h>
 diff -r d6324adcc21f sys/dev/ic/arn9287.c
 --- a/sys/dev/ic/arn9287.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/arn9287.c	Tue Aug 01 19:48:40 2023 +1200
++++ b/sys/dev/ic/arn9287.c	Wed Aug 02 11:26:01 2023 +1200
 @@ -56,8 +56,8 @@
  
  #include <net80211/ieee80211_netbsd.h>
@@ -1162,7 +1162,7 @@ diff -r d6324adcc21f sys/dev/ic/arn9287.c
  #include <dev/ic/athnreg.h>
 diff -r d6324adcc21f sys/dev/ic/athn.c
 --- a/sys/dev/ic/athn.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/athn.c	Tue Aug 01 19:48:40 2023 +1200
++++ b/sys/dev/ic/athn.c	Wed Aug 02 11:26:01 2023 +1200
 @@ -61,8 +61,8 @@
  
  #include <net80211/ieee80211_netbsd.h>
@@ -2376,7 +2376,7 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
 +}
 diff -r d6324adcc21f sys/dev/ic/athnvar.h
 --- a/sys/dev/ic/athnvar.h	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/athnvar.h	Tue Aug 01 19:48:40 2023 +1200
++++ b/sys/dev/ic/athnvar.h	Wed Aug 02 11:26:01 2023 +1200
 @@ -320,7 +320,6 @@
  
  struct athn_node {
@@ -2465,7 +2465,7 @@ diff -r d6324adcc21f sys/dev/ic/athnvar.h
  int	athn_txtime(struct athn_softc *, int, int, u_int);
 diff -r d6324adcc21f sys/dev/pci/if_athn_pci.c
 --- a/sys/dev/pci/if_athn_pci.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/pci/if_athn_pci.c	Tue Aug 01 19:48:40 2023 +1200
++++ b/sys/dev/pci/if_athn_pci.c	Wed Aug 02 11:26:01 2023 +1200
 @@ -84,8 +84,6 @@
  CFATTACH_DECL_NEW(athn_pci, sizeof(struct athn_pci_softc), athn_pci_match,
      athn_pci_attach, athn_pci_detach, athn_pci_activate);
@@ -2574,218 +2574,15 @@ diff -r d6324adcc21f sys/dev/pci/if_athn_pci.c
  
  Static uint32_t
  athn_pci_read(struct athn_softc *sc, uint32_t addr)
-diff -r d6324adcc21f sys/dev/usb/if_athn_usb.c
---- a/sys/dev/usb/if_athn_usb.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/usb/if_athn_usb.c	Tue Aug 01 19:48:40 2023 +1200
-@@ -20,6 +20,7 @@
- /*
-  * USB front-end for Atheros AR9271 and AR7010 chipsets.
-  */
-+/* XXX Not yet converted; just modified so athn(4) compiles */
+diff -r d6324adcc21f sys/dev/usb/usbdevices.config
+--- a/sys/dev/usb/usbdevices.config	Tue Jul 18 21:26:39 2023 +0200
++++ b/sys/dev/usb/usbdevices.config	Wed Aug 02 11:26:01 2023 +1200
+@@ -136,7 +136,7 @@
+ usmsc*	at uhub? port ?		# SMSC95xx based adapters
  
- #include <sys/cdefs.h>
- __KERNEL_RCSID(0, "$NetBSD: if_athn_usb.c,v 1.38 2020/03/14 02:35:33 christos Exp $");
-@@ -127,9 +128,11 @@
- Static int	athn_usb_media_change(struct ifnet *);
- Static void	athn_usb_newassoc(struct ieee80211_node *, int);
- Static void	athn_usb_newassoc_cb(struct athn_usb_softc *, void *);
-+#if 0
- Static int	athn_usb_newstate(struct ieee80211com *, enum ieee80211_state,
- 		    int);
- Static void	athn_usb_newstate_cb(struct athn_usb_softc *, void *);
-+#endif
- Static void	athn_usb_node_cleanup(struct ieee80211_node *);
- Static void	athn_usb_node_cleanup_cb(struct athn_usb_softc *, void *);
- Static int	athn_usb_open_pipes(struct athn_usb_softc *);
-@@ -147,8 +150,10 @@
- Static void	athn_usb_stop(struct ifnet *, int disable);
- Static void	athn_usb_stop_locked(struct ifnet *);
- Static void	athn_usb_swba(struct athn_usb_softc *);
-+#if 0
- Static int	athn_usb_switch_chan(struct athn_softc *,
- 		    struct ieee80211_channel *, struct ieee80211_channel *);
-+#endif
- Static void	athn_usb_task(void *);
- Static int	athn_usb_tx(struct athn_softc *, struct mbuf *,
- 		    struct ieee80211_node *, struct athn_usb_tx_data *);
-@@ -1407,6 +1412,7 @@
- 	return error;
- }
- 
-+#if 0
- Static int
- athn_usb_newstate(struct ieee80211com *ic, enum ieee80211_state nstate,
-     int arg)
-@@ -1516,6 +1522,7 @@
- 		(void)sc->sc_newstate(ic, nstate, cmd->arg);
- 	splx(s);
- }
-+#endif
- 
- Static void
- athn_usb_newassoc(struct ieee80211_node *ni, int isnew)
-@@ -1734,6 +1741,7 @@
- 	AR_WRITE_BARRIER(sc);
- }
- 
-+#if 0
- Static int
- athn_usb_switch_chan(struct athn_softc *sc, struct ieee80211_channel *curchan,
-     struct ieee80211_channel *extchan)
-@@ -1791,6 +1799,7 @@
- 	error = athn_usb_wmi_cmd(usc, AR_WMI_CMD_ENABLE_INTR);
- 	return error;
- }
-+#endif
- 
- #ifdef notyet_edca
- Static void
-@@ -1848,7 +1857,7 @@
- 	DPRINTFN(DBG_FN, usc, "\n");
- 
- 	s = splnet();
--	athn_updateslot(&usc->usc_sc.sc_if);
-+	athn_updateslot(&usc->usc_sc.sc_ic);
- 	splx(s);
- }
- 
-@@ -2595,6 +2604,7 @@
- 			return;
- 		}
- 
-+#if 0
- 		/* Send pending management frames first. */
- 		IF_DEQUEUE(&ic->ic_mgtq, m);
- 		if (m != NULL) {
-@@ -2604,6 +2614,7 @@
- 		}
- 		if (ic->ic_state != IEEE80211_S_RUN)
- 			break;
-+#endif
- 
- 		/* Encapsulate and send data frames. */
- 		IFQ_DEQUEUE(&ifp->if_snd, m);
-@@ -2616,7 +2627,8 @@
- 			continue;
- 		}
- 		eh = mtod(m, struct ether_header *);
--		ni = ieee80211_find_txnode(ic, eh->ether_dhost);
-+		ni = ieee80211_find_txnode(TAILQ_FIRST(&ic->ic_vaps),
-+			eh->ether_dhost);
- 		if (ni == NULL) {
- 			m_freem(m);
- 			if_statinc(ifp, if_oerrors);
-@@ -2625,13 +2637,13 @@
- 
- 		bpf_mtap(ifp, m, BPF_D_OUT);
- 
--		if ((m = ieee80211_encap(ic, m, ni)) == NULL) {
-+		if ((m = ieee80211_encap(TAILQ_FIRST(&ic->ic_vaps), ni, m))
-+		    == NULL) {
- 			ieee80211_free_node(ni);
- 			if_statinc(ifp, if_oerrors);
- 			continue;
- 		}
-- sendit:
--		bpf_mtap3(ic->ic_rawbpf, m, BPF_D_OUT);
-+		/* bpf_mtap3(ic->ic_rawbpf, m, BPF_D_OUT); */
- 
- 		if (athn_usb_tx(sc, m, ni, data) != 0) {
- 			m_freem(m);
-@@ -2670,12 +2682,14 @@
- 		}
- 		ifp->if_timer = 1;
- 	}
--	ieee80211_watchdog(&sc->sc_ic);
-+	/* ieee80211_watchdog(&sc->sc_ic); */
- }
- 
- Static int
- athn_usb_ioctl(struct ifnet *ifp, u_long cmd, void *data)
- {
-+	return 1;
-+#if 0
- 	struct athn_softc *sc = ifp->if_softc;
- 	struct athn_usb_softc *usc = ATHN_USB_SOFTC(sc);
- 	struct ieee80211com *ic = &sc->sc_ic;
-@@ -2742,6 +2756,7 @@
- 	}
- 	splx(s);
- 	return error;
-+#endif
- }
- 
- Static int
-@@ -2787,7 +2802,7 @@
- 	extchan = NULL;
- 
- 	/* In case a new MAC address has been configured. */
--	IEEE80211_ADDR_COPY(ic->ic_myaddr, CLLADDR(ifp->if_sadl));
-+	IEEE80211_ADDR_COPY(ic->ic_macaddr, CLLADDR(ifp->if_sadl));
- 
- 	error = athn_set_power_awake(sc);
- 	if (error != 0)
-@@ -2823,7 +2838,7 @@
- 	/* Create main interface on target. */
- 	memset(&hvif, 0, sizeof(hvif));
- 	hvif.index = 0;
--	IEEE80211_ADDR_COPY(hvif.myaddr, ic->ic_myaddr);
-+	IEEE80211_ADDR_COPY(hvif.myaddr, ic->ic_macaddr);
- 	switch (ic->ic_opmode) {
- 	case IEEE80211_M_STA:
- 		hvif.opmode = htobe32(AR_HTC_M_STA);
-@@ -2842,8 +2857,10 @@
- 		hvif.opmode = htobe32(AR_HTC_M_HOSTAP);
- 		break;
- #endif
-+	default:
-+		break;
- 	}
--	hvif.rtsthreshold = htobe16(ic->ic_rtsthreshold);
-+	/* hvif.rtsthreshold = htobe16(ic->ic_rtsthreshold); */
- 	DPRINTFN(DBG_INIT, sc, "creating VAP\n");
- 	error = athn_usb_wmi_xcmd(usc, AR_WMI_CMD_VAP_CREATE,
- 	    &hvif, sizeof(hvif), NULL);
-@@ -2852,7 +2869,7 @@
- 
- 	/* Create a fake node to send management frames before assoc. */
- 	memset(&sta, 0, sizeof(sta));
--	IEEE80211_ADDR_COPY(sta.macaddr, ic->ic_myaddr);
-+	IEEE80211_ADDR_COPY(sta.macaddr, ic->ic_macaddr);
- 	sta.sta_index = 0;
- 	sta.is_vif_sta = 1;
- 	sta.vif_index = hvif.index;
-@@ -2902,6 +2919,7 @@
- 			athn_usb_set_key(ic, NULL, &ic->ic_nw_keys[i]);
- 	}
- #endif
-+#if 0
- 	if (ic->ic_opmode == IEEE80211_M_HOSTAP)
- 		ic->ic_max_aid = AR_USB_MAX_STA;  /* Firmware is limited to 8 STA */
- 	else
-@@ -2911,6 +2929,7 @@
- 		ieee80211_new_state(ic, IEEE80211_S_RUN, -1);
- 	else
- 		ieee80211_new_state(ic, IEEE80211_S_SCAN, -1);
-+#endif
- 	athn_usb_wait_async(usc);
- 	return 0;
-  fail:
-@@ -2943,7 +2962,7 @@
- 	DPRINTFN(DBG_FN, sc, "\n");
- 
- 	s = splusb();
--	ieee80211_new_state(ic, IEEE80211_S_INIT, -1);
-+	/* ieee80211_new_state(ic, IEEE80211_S_INIT, -1); */
- 	athn_usb_wait_async(usc);
- 	splx(s);
- 
-@@ -2967,7 +2986,7 @@
- 	/* Remove main interface. */
- 	memset(&hvif, 0, sizeof(hvif));
- 	hvif.index = 0;
--	IEEE80211_ADDR_COPY(hvif.myaddr, ic->ic_myaddr);
-+	IEEE80211_ADDR_COPY(hvif.myaddr, ic->ic_macaddr);
- 	(void)athn_usb_wmi_xcmd(usc, AR_WMI_CMD_VAP_REMOVE,
- 	    &hvif, sizeof(hvif), NULL);
- 
+ # USB 802.11 adapters
+-athn*	at uhub? port ?		# Atheros AR9002U
++#athn*	at uhub? port ?		# Atheros AR9002U
+ atu*	at uhub? port ?		# Atmel AT76C50XX based adapters
+ bwfm*	at uhub? port ?		# Broadcom FullMAC
+ otus*	at uhub? port ?		# Atheros AR9001U
