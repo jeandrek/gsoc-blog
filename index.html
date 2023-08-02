@@ -15,6 +15,21 @@
     <main>
       <article>
 	<h2>
+	  <a id="rate-adaption" href="#rate-adaption">Rate adaption</a>
+	</h2>
+	<p class="date">
+	  <time datetime="2023-08-02">2<sup>nd</sup> August, 2023</time>
+	</p>
+	<p>
+	  Yesterday added calls to ratectl to athn.  Now I realized that
+	  <code>ni_txrate</code> has changed in meaning (from being an index
+	  to rs_rates to the rate itself) and fixed ath(4) and athn(4)
+	  accordingly.
+	</p>
+      </article>
+      <hr>
+      <article>
+	<h2>
 	  <a id="testing" href="#testing">Testing</a>
 	</h2>
 	<p class="date">

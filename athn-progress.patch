@@ -1,6 +1,6 @@
-diff -r d6324adcc21f sys/dev/cardbus/if_athn_cardbus.c
---- a/sys/dev/cardbus/if_athn_cardbus.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/cardbus/if_athn_cardbus.c	Wed Aug 02 11:26:01 2023 +1200
+diff -r f00ade18273e sys/dev/cardbus/if_athn_cardbus.c
+--- a/sys/dev/cardbus/if_athn_cardbus.c	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/cardbus/if_athn_cardbus.c	Wed Aug 02 16:31:26 2023 +1200
 @@ -179,7 +179,7 @@
  
  	if (pmf_device_register(self,
@@ -10,9 +10,9 @@ diff -r d6324adcc21f sys/dev/cardbus/if_athn_cardbus.c
  		pmf_device_suspend(self, &sc->sc_qual);
  	} else
  		aprint_error_dev(self, "couldn't establish power handler\n");
-diff -r d6324adcc21f sys/dev/ic/arn5008.c
---- a/sys/dev/ic/arn5008.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/arn5008.c	Wed Aug 02 11:26:01 2023 +1200
+diff -r f00ade18273e sys/dev/ic/arn5008.c
+--- a/sys/dev/ic/arn5008.c	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/ic/arn5008.c	Wed Aug 02 16:31:26 2023 +1200
 @@ -56,8 +56,8 @@
  
  #include <net80211/ieee80211_netbsd.h>
@@ -452,7 +452,7 @@ diff -r d6324adcc21f sys/dev/ic/arn5008.c
  	else {
  		qos = 0;
  		qid = ATHN_QID_AC_BE;
-@@ -1394,11 +1445,13 @@
+@@ -1394,13 +1445,15 @@
  		    (ic->ic_curmode == IEEE80211_MODE_11A) ?
  			ATHN_RIDX_OFDM6 : ATHN_RIDX_CCK1;
  	}
@@ -464,8 +464,11 @@ diff -r d6324adcc21f sys/dev/ic/arn5008.c
  	}
 +#endif
  	else {
- 		int txrate = ni->ni_txrate;
+-		int txrate = ni->ni_txrate;
++		int txrate = an->txrate;
  		/* Use fallback table of the node. */
+ 		for (i = 0; i < 4; i++) {
+ 			ridx[i] = an->ridx[txrate];
 @@ -1467,7 +1520,10 @@
  	}
  	bf->bf_m = m;
@@ -495,9 +498,9 @@ diff -r d6324adcc21f sys/dev/ic/arn5008.c
  			ds->ds_ctl0 |= AR_TXC0_RTS_ENABLE;
  		}
  		else if ((ic->ic_flags & IEEE80211_F_USEPROT) &&
-diff -r d6324adcc21f sys/dev/ic/arn5416.c
---- a/sys/dev/ic/arn5416.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/arn5416.c	Wed Aug 02 11:26:01 2023 +1200
+diff -r f00ade18273e sys/dev/ic/arn5416.c
+--- a/sys/dev/ic/arn5416.c	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/ic/arn5416.c	Wed Aug 02 16:31:26 2023 +1200
 @@ -56,8 +56,8 @@
  
  #include <net80211/ieee80211_netbsd.h>
@@ -508,9 +511,9 @@ diff -r d6324adcc21f sys/dev/ic/arn5416.c
  #include <net80211/ieee80211_regdomain.h>
  
  #include <dev/ic/athnreg.h>
-diff -r d6324adcc21f sys/dev/ic/arn9003.c
---- a/sys/dev/ic/arn9003.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/arn9003.c	Wed Aug 02 11:26:01 2023 +1200
+diff -r f00ade18273e sys/dev/ic/arn9003.c
+--- a/sys/dev/ic/arn9003.c	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/ic/arn9003.c	Wed Aug 02 16:31:26 2023 +1200
 @@ -57,8 +57,8 @@
  
  #include <net80211/ieee80211_netbsd.h>
@@ -952,7 +955,7 @@ diff -r d6324adcc21f sys/dev/ic/arn9003.c
  	else {
  		qos = 0;
  		qid = ATHN_QID_AC_BE;
-@@ -1547,11 +1586,14 @@
+@@ -1547,13 +1586,16 @@
  		    (ic->ic_curmode == IEEE80211_MODE_11A) ?
  			ATHN_RIDX_OFDM6 : ATHN_RIDX_CCK1;
  	}
@@ -965,8 +968,11 @@ diff -r d6324adcc21f sys/dev/ic/arn9003.c
  	}
 +#endif
  	else {
- 		int txrate = ni->ni_txrate;
+-		int txrate = ni->ni_txrate;
++		int txrate = an->txrate;
  		/* Use fallback table of the node. */
+ 		for (i = 0; i < 4; i++) {
+ 			ridx[i] = an->ridx[txrate];
 @@ -1620,7 +1662,9 @@
  	}
  	bf->bf_m = m;
@@ -1121,9 +1127,9 @@ diff -r d6324adcc21f sys/dev/ic/arn9003.c
  
  PUBLIC void
  ar9003_write_txpower(struct athn_softc *sc, int16_t power[ATHN_POWER_COUNT])
-diff -r d6324adcc21f sys/dev/ic/arn9280.c
---- a/sys/dev/ic/arn9280.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/arn9280.c	Wed Aug 02 11:26:01 2023 +1200
+diff -r f00ade18273e sys/dev/ic/arn9280.c
+--- a/sys/dev/ic/arn9280.c	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/ic/arn9280.c	Wed Aug 02 16:31:26 2023 +1200
 @@ -56,8 +56,8 @@
  
  #include <net80211/ieee80211_netbsd.h>
@@ -1134,9 +1140,9 @@ diff -r d6324adcc21f sys/dev/ic/arn9280.c
  #include <net80211/ieee80211_regdomain.h>
  
  #include <dev/ic/athnreg.h>
-diff -r d6324adcc21f sys/dev/ic/arn9285.c
---- a/sys/dev/ic/arn9285.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/arn9285.c	Wed Aug 02 11:26:01 2023 +1200
+diff -r f00ade18273e sys/dev/ic/arn9285.c
+--- a/sys/dev/ic/arn9285.c	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/ic/arn9285.c	Wed Aug 02 16:31:26 2023 +1200
 @@ -60,8 +60,8 @@
  
  #include <net80211/ieee80211_netbsd.h>
@@ -1147,9 +1153,9 @@ diff -r d6324adcc21f sys/dev/ic/arn9285.c
  #include <net80211/ieee80211_regdomain.h>
  
  #include <dev/ic/athnreg.h>
-diff -r d6324adcc21f sys/dev/ic/arn9287.c
---- a/sys/dev/ic/arn9287.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/arn9287.c	Wed Aug 02 11:26:01 2023 +1200
+diff -r f00ade18273e sys/dev/ic/arn9287.c
+--- a/sys/dev/ic/arn9287.c	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/ic/arn9287.c	Wed Aug 02 16:31:26 2023 +1200
 @@ -56,8 +56,8 @@
  
  #include <net80211/ieee80211_netbsd.h>
@@ -1160,9 +1166,9 @@ diff -r d6324adcc21f sys/dev/ic/arn9287.c
  #include <net80211/ieee80211_regdomain.h>
  
  #include <dev/ic/athnreg.h>
-diff -r d6324adcc21f sys/dev/ic/athn.c
---- a/sys/dev/ic/athn.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/athn.c	Wed Aug 02 11:26:01 2023 +1200
+diff -r f00ade18273e sys/dev/ic/athn.c
+--- a/sys/dev/ic/athn.c	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/ic/athn.c	Wed Aug 02 16:31:26 2023 +1200
 @@ -61,8 +61,8 @@
  
  #include <net80211/ieee80211_netbsd.h>
@@ -1532,7 +1538,7 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
  
  	if (!device_activation(sc->sc_dev, DEVACT_LEVEL_DRIVER))
  		/*
-@@ -1288,10 +1273,7 @@
+@@ -1288,10 +1273,9 @@
  Static void
  athn_iter_func(void *arg, struct ieee80211_node *ni)
  {
@@ -1540,11 +1546,13 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
 -	struct athn_node *an = (struct athn_node *)ni;
 -
 -	ieee80211_amrr_choose(&sc->sc_amrr, ni, &an->amn);
-+	ieee80211_ratectl_rate(ni, NULL, 0);
++	struct athn_node *an = ATHN_NODE(ni);
++
++	an->txrate = ieee80211_ratectl_rate(ni, NULL, 0);
  }
  
  Static void
-@@ -1328,12 +1310,15 @@
+@@ -1328,12 +1312,15 @@
  
  	ops->next_calib(sc);
  #endif
@@ -1564,7 +1572,7 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
  	callout_schedule(&sc->sc_calib_to, hz / 2);
  	splx(s);
  }
-@@ -1970,9 +1955,9 @@
+@@ -1970,9 +1957,9 @@
  }
  
  PUBLIC void
@@ -1576,7 +1584,7 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
  	uint32_t tsfhi, tsflo, tsftu, reg;
  	uint32_t intval, next_tbtt, next_dtim;
  	int dtim_period, rem_dtim_count;
-@@ -1982,7 +1967,7 @@
+@@ -1982,7 +1969,7 @@
  	tsftu = AR_TSF_TO_TU(tsfhi, tsflo) + AR_FUDGE;
  
  	/* Beacon interval in TU. */
@@ -1585,7 +1593,7 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
  
  	next_tbtt = roundup(tsftu, intval);
  #ifdef notyet
-@@ -2039,13 +2024,13 @@
+@@ -2039,13 +2026,13 @@
  
  #ifndef IEEE80211_STA_ONLY
  PUBLIC void
@@ -1602,7 +1610,7 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
  	next_tbtt = intval;
  
  	AR_WRITE(sc, AR_NEXT_TBTT_TIMER, next_tbtt * IEEE80211_DUR_TU);
-@@ -2298,8 +2283,8 @@
+@@ -2298,8 +2285,8 @@
  	ops->init_from_rom(sc, curchan, extchan);
  
  	/* XXX */
@@ -1613,7 +1621,7 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
  	    sta_id1 | AR_STA_ID1_RTS_USE_DEF | AR_STA_ID1_CRPT_MIC_ENABLE);
  
  	athn_set_opmode(sc);
-@@ -2404,7 +2389,7 @@
+@@ -2404,7 +2391,7 @@
  }
  
  Static struct ieee80211_node *
@@ -1622,7 +1630,7 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
  {
  
  	return malloc(sizeof(struct athn_node), M_DEVBUF,
-@@ -2414,14 +2399,15 @@
+@@ -2414,16 +2401,14 @@
  Static void
  athn_newassoc(struct ieee80211_node *ni, int isnew)
  {
@@ -1633,14 +1641,15 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
  	uint8_t rate;
  	int ridx, i, j;
  
-+/* XXX*/
-+#if 0
- 	ieee80211_amrr_node_init(&sc->sc_amrr, &an->amn);
-+#endif
+-	ieee80211_amrr_node_init(&sc->sc_amrr, &an->amn);
  	/* Start at lowest available bit-rate, AMRR will raise. */
- 	ni->ni_txrate = 0;
+-	ni->ni_txrate = 0;
++	an->txrate = 0;
++	ni->ni_txrate = rs->rs_rates[0] & IEEE80211_RATE_VAL;
  
-@@ -2449,52 +2435,78 @@
+ 	for (i = 0; i < rs->rs_nrates; i++) {
+ 		rate = rs->rs_rates[i] & IEEE80211_RATE_VAL;
+@@ -2449,52 +2434,78 @@
  	}
  }
  
@@ -1756,7 +1765,7 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
  	uint32_t reg;
  	int error;
  
-@@ -2510,7 +2522,7 @@
+@@ -2510,7 +2521,7 @@
  		error = athn_switch_chan(sc, ic->ic_curchan, NULL);
  		if (error != 0)
  			return error;
@@ -1765,7 +1774,7 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
  		break;
  	case IEEE80211_S_AUTH:
  		athn_set_led(sc, 0);
-@@ -2527,19 +2539,19 @@
+@@ -2527,19 +2538,19 @@
  			break;
  
  		/* Fake a join to initialize the Tx rate. */
@@ -1790,7 +1799,7 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
  			/* Enable beacon miss interrupts. */
  			sc->sc_imask |= AR_IMR_BMISS;
  
-@@ -2560,10 +2572,15 @@
+@@ -2560,10 +2571,15 @@
  		/* XXX Start ANI. */
  
  		callout_schedule(&sc->sc_calib_to, hz / 2);
@@ -1807,7 +1816,7 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
  }
  
  #ifdef notyet_edca
-@@ -2619,10 +2636,9 @@
+@@ -2619,10 +2635,9 @@
  }
  
  PUBLIC void
@@ -1820,7 +1829,7 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
  	int slot;
  
  	slot = (ic->ic_flags & IEEE80211_F_SHSLOT) ? 9 : 20;
-@@ -2630,93 +2646,84 @@
+@@ -2630,93 +2645,84 @@
  	AR_WRITE_BARRIER(sc);
  }
  
@@ -1948,7 +1957,7 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
  	struct ethercom *ec = &sc->sc_ec;
  	struct ifnet *ifp = &ec->ec_if;
  	struct ether_multi *enm;
-@@ -2754,87 +2761,92 @@
+@@ -2754,87 +2760,92 @@
   done:
  	ETHER_UNLOCK(ec);
   done2:
@@ -2114,7 +2123,7 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
  	struct athn_ops *ops = &sc->sc_ops;
  	struct ieee80211com *ic = &sc->sc_ic;
  	struct ieee80211_channel *curchan, *extchan;
-@@ -2844,10 +2856,8 @@
+@@ -2844,10 +2855,8 @@
  	KASSERT(!cpu_intr_p());
  
  	if (device_is_active(sc->sc_dev)) {
@@ -2126,7 +2135,7 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
  		/* avoid recursion in athn_resume */
  		if (!pmf_device_subtree_resume(sc->sc_dev, &sc->sc_qual) ||
  		    !device_is_active(sc->sc_dev)) {
-@@ -2855,14 +2865,14 @@
+@@ -2855,14 +2864,14 @@
  			    device_xname(sc->sc_dev));
  			return 0;
  		}
@@ -2143,7 +2152,7 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
  
  #ifdef openbsd_power_management
  	/* For CardBus, power on the socket. */
-@@ -2921,8 +2931,7 @@
+@@ -2921,8 +2930,7 @@
  		athn_btcoex_enable(sc);
  #endif
  
@@ -2153,7 +2162,7 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
  
  #ifdef notyet
  	if (ic->ic_flags & IEEE80211_F_WEPON) {
-@@ -2931,32 +2940,41 @@
+@@ -2931,32 +2939,41 @@
  			athn_set_key(ic, NULL, &ic->ic_nw_keys[i]);
  	}
  #endif
@@ -2205,7 +2214,7 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
  
  #ifdef ATHN_BT_COEXISTENCE
  	/* Disable bluetooth coexistence for combo chips. */
-@@ -3007,29 +3025,157 @@
+@@ -3007,29 +3024,157 @@
  athn_pmf_wlan_off(device_t self)
  {
  	struct athn_softc *sc = device_private(self);
@@ -2374,18 +2383,27 @@ diff -r d6324adcc21f sys/dev/ic/athn.c
 +	ieee80211_vap_detach(arg);
 +	kmem_free(vap, sizeof(*vap));
 +}
-diff -r d6324adcc21f sys/dev/ic/athnvar.h
---- a/sys/dev/ic/athnvar.h	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/athnvar.h	Wed Aug 02 11:26:01 2023 +1200
-@@ -320,7 +320,6 @@
+diff -r f00ade18273e sys/dev/ic/athnvar.h
+--- a/sys/dev/ic/athnvar.h	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/ic/athnvar.h	Wed Aug 02 16:31:26 2023 +1200
+@@ -319,11 +319,11 @@
+ #define ATHN_POWER_COUNT	68
  
  struct athn_node {
- 	struct ieee80211_node		ni;
+-	struct ieee80211_node		ni;
 -	struct ieee80211_amrr_node	amn;
- 	uint8_t				ridx[IEEE80211_RATE_MAXSIZE];
- 	uint8_t				fallback[IEEE80211_RATE_MAXSIZE];
- 	uint8_t				sta_index;
-@@ -418,8 +417,8 @@
+-	uint8_t				ridx[IEEE80211_RATE_MAXSIZE];
+-	uint8_t				fallback[IEEE80211_RATE_MAXSIZE];
+-	uint8_t				sta_index;
++	struct ieee80211_node	ni;
++	uint8_t		ridx[IEEE80211_RATE_MAXSIZE];
++	uint8_t		fallback[IEEE80211_RATE_MAXSIZE];
++	uint8_t		sta_index;
++	uint8_t		txrate;		/* index to rs_rates */
+ };
+ 
+ /*
+@@ -418,8 +418,8 @@
  	void	(*rx_enable)(struct athn_softc *);
  	int	(*intr_status)(struct athn_softc *);
  	int	(*intr)(struct athn_softc *);
@@ -2396,7 +2414,7 @@ diff -r d6324adcc21f sys/dev/ic/athnvar.h
  
  	/* PHY callbacks. */
  	void	(*set_rf_mode)(struct athn_softc *,
-@@ -458,6 +457,7 @@
+@@ -458,6 +458,7 @@
  	struct ieee80211com		sc_ic;
  	struct ethercom			sc_ec;
  #define sc_if	sc_ec.ec_if
@@ -2404,7 +2422,7 @@ diff -r d6324adcc21f sys/dev/ic/athnvar.h
  	void				*sc_soft_ih;
  
  #if 0
-@@ -469,14 +469,11 @@
+@@ -469,14 +470,11 @@
  	void				(*sc_enable_extsynch)(
  					    struct athn_softc *);
  
@@ -2420,7 +2438,7 @@ diff -r d6324adcc21f sys/dev/ic/athnvar.h
  
  	u_int				sc_flags;
  #define ATHN_FLAG_PCIE			(1 << 0)
-@@ -496,6 +493,7 @@
+@@ -496,6 +494,7 @@
  #define ATHN_FLAG_AN_TOP2_FIXUP		(1 << 12)
  #define ATHN_FLAG_NON_ENTERPRISE	(1 << 13)
  #define ATHN_FLAG_3TREDUCE_CHAIN	(1 << 14)
@@ -2428,7 +2446,7 @@ diff -r d6324adcc21f sys/dev/ic/athnvar.h
  
  	uint8_t				sc_ngpiopins;
  	int				sc_led_pin;
-@@ -625,6 +623,7 @@
+@@ -625,6 +624,7 @@
  void	athn_suspend(struct athn_softc *);
  bool	athn_resume(struct athn_softc *);
  int	athn_intr(void *);
@@ -2436,7 +2454,7 @@ diff -r d6324adcc21f sys/dev/ic/athnvar.h
  
  /* used by if_athn_usb.c */
  void	athn_btcoex_init(struct athn_softc *);
-@@ -638,14 +637,14 @@
+@@ -638,14 +638,14 @@
  void	athn_set_bss(struct athn_softc *, struct ieee80211_node *);
  int	athn_set_chan(struct athn_softc *, struct ieee80211_channel *,
  	    struct ieee80211_channel *);
@@ -2454,7 +2472,7 @@ diff -r d6324adcc21f sys/dev/ic/athnvar.h
  
  #ifdef notyet_edca
  void	athn_updateedca(struct ieee80211com *);
-@@ -666,7 +665,7 @@
+@@ -666,7 +666,7 @@
  void	athn_config_pcie(struct athn_softc *);
  void	athn_get_delta_slope(uint32_t, uint32_t *, uint32_t *);
  void	athn_inc_tx_trigger_level(struct athn_softc *);
@@ -2463,9 +2481,9 @@ diff -r d6324adcc21f sys/dev/ic/athnvar.h
  void	athn_stop_tx_dma(struct athn_softc *, int);
  int	athn_tx_pending(struct athn_softc *, int);
  int	athn_txtime(struct athn_softc *, int, int, u_int);
-diff -r d6324adcc21f sys/dev/pci/if_athn_pci.c
---- a/sys/dev/pci/if_athn_pci.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/pci/if_athn_pci.c	Wed Aug 02 11:26:01 2023 +1200
+diff -r f00ade18273e sys/dev/pci/if_athn_pci.c
+--- a/sys/dev/pci/if_athn_pci.c	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/pci/if_athn_pci.c	Wed Aug 02 16:31:26 2023 +1200
 @@ -84,8 +84,6 @@
  CFATTACH_DECL_NEW(athn_pci, sizeof(struct athn_pci_softc), athn_pci_match,
      athn_pci_attach, athn_pci_detach, athn_pci_activate);
@@ -2574,9 +2592,9 @@ diff -r d6324adcc21f sys/dev/pci/if_athn_pci.c
  
  Static uint32_t
  athn_pci_read(struct athn_softc *sc, uint32_t addr)
-diff -r d6324adcc21f sys/dev/usb/usbdevices.config
---- a/sys/dev/usb/usbdevices.config	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/usb/usbdevices.config	Wed Aug 02 11:26:01 2023 +1200
+diff -r f00ade18273e sys/dev/usb/usbdevices.config
+--- a/sys/dev/usb/usbdevices.config	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/usb/usbdevices.config	Wed Aug 02 16:31:26 2023 +1200
 @@ -136,7 +136,7 @@
  usmsc*	at uhub? port ?		# SMSC95xx based adapters
  

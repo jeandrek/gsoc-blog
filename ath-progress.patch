@@ -1,6 +1,6 @@
-diff -r d6324adcc21f sys/dev/cardbus/if_ath_cardbus.c
---- a/sys/dev/cardbus/if_ath_cardbus.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/cardbus/if_ath_cardbus.c	Wed Aug 02 10:21:04 2023 +1200
+diff -r f00ade18273e sys/dev/cardbus/if_ath_cardbus.c
+--- a/sys/dev/cardbus/if_ath_cardbus.c	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/cardbus/if_ath_cardbus.c	Wed Aug 02 16:29:51 2023 +1200
 @@ -193,7 +193,6 @@
  
  	if (pmf_device_register(self,
@@ -9,9 +9,9 @@ diff -r d6324adcc21f sys/dev/cardbus/if_ath_cardbus.c
  		pmf_device_suspend(self, &sc->sc_qual);
  	} else
  		aprint_error_dev(self, "couldn't establish power handler\n");
-diff -r d6324adcc21f sys/dev/ic/ath.c
---- a/sys/dev/ic/ath.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/ath.c	Wed Aug 02 10:21:04 2023 +1200
+diff -r f00ade18273e sys/dev/ic/ath.c
+--- a/sys/dev/ic/ath.c	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/ic/ath.c	Wed Aug 02 16:29:51 2023 +1200
 @@ -122,48 +122,53 @@
  #define	HTOAH32(x)	(x)
  #endif
@@ -2564,9 +2564,9 @@ diff -r d6324adcc21f sys/dev/ic/ath.c
 +		device_printf(sc->sc_dev, "using %u tx buffers\n", ath_txbuf);
  #undef HAL_MODE_DUALBAND
  }
-diff -r d6324adcc21f sys/dev/ic/ath_netbsd.c
---- a/sys/dev/ic/ath_netbsd.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/ath_netbsd.c	Wed Aug 02 10:21:04 2023 +1200
+diff -r f00ade18273e sys/dev/ic/ath_netbsd.c
+--- a/sys/dev/ic/ath_netbsd.c	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/ic/ath_netbsd.c	Wed Aug 02 16:29:51 2023 +1200
 @@ -268,7 +268,7 @@
  		return error;
  	return !ath_hal_settpscale(sc->sc_ah, scale)
@@ -2680,9 +2680,9 @@ diff -r d6324adcc21f sys/dev/ic/ath_netbsd.c
  	    "EEPROM regdomain code")) != 0)
  		goto err;
  	return;
-diff -r d6324adcc21f sys/dev/ic/ath_netbsd.h
---- a/sys/dev/ic/ath_netbsd.h	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/ath_netbsd.h	Wed Aug 02 10:21:04 2023 +1200
+diff -r f00ade18273e sys/dev/ic/ath_netbsd.h
+--- a/sys/dev/ic/ath_netbsd.h	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/ic/ath_netbsd.h	Wed Aug 02 16:29:51 2023 +1200
 @@ -36,13 +36,13 @@
  
  #define ATH_CALLOUT_INIT(__ch, __mpsafe) callout_init((__ch), 0)
@@ -2722,9 +2722,9 @@ diff -r d6324adcc21f sys/dev/ic/ath_netbsd.h
  	SYSCTL_PFX_INT(sc->sc_, __rw, __name, __descr)
  
  #define	SYSCTL_GLOBAL_INT(__rw, __name, __descr, __var)			\
-diff -r d6324adcc21f sys/dev/ic/athrate-amrr.c
---- a/sys/dev/ic/athrate-amrr.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/athrate-amrr.c	Wed Aug 02 10:21:04 2023 +1200
+diff -r f00ade18273e sys/dev/ic/athrate-amrr.c
+--- a/sys/dev/ic/athrate-amrr.c	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/ic/athrate-amrr.c	Wed Aug 02 16:29:51 2023 +1200
 @@ -59,6 +59,7 @@
  #include <sys/sysctl.h>
  #include <sys/kernel.h>
@@ -2741,6 +2741,26 @@ diff -r d6324adcc21f sys/dev/ic/athrate-amrr.c
  #include <dev/ic/athvar.h>
  #include <dev/ic/athrate-amrr.h>
  
+@@ -209,7 +211,7 @@
+ 	    ni->ni_rates.rs_nrates > 0 ?
+ 		(ni->ni_rates.rs_rates[rate] & IEEE80211_RATE_VAL) / 2 : 0);
+ 
+-	ni->ni_txrate = rate;
++	amn->amn_rix = rate;
+ 	/*
+ 	 * Before associating a node has no rate set setup
+ 	 * so we can't calculate any transmit codes to use.
+@@ -218,8 +220,8 @@
+ 	 * lowest hardware rate.
+ 	 */
+ 	if (ni->ni_rates.rs_nrates > 0) {
+-		amn->amn_tx_rix0 = sc->sc_rixmap[
+-					       ni->ni_rates.rs_rates[rate] & IEEE80211_RATE_VAL];
++		ni->ni_txrate = ni->ni_rates.rs_rates[rate] & IEEE80211_RATE_VAL;
++		amn->amn_tx_rix0 = sc->sc_rixmap[ni->ni_txrate];
+ 		amn->amn_tx_rate0 = rt->info[amn->amn_tx_rix0].rateCode;
+ 		amn->amn_tx_rate0sp = amn->amn_tx_rate0 |
+ 			rt->info[amn->amn_tx_rix0].shortPreamble;
 @@ -250,7 +252,7 @@
  				/* NB: only do this if we didn't already do it above */
  				amn->amn_tx_rate3 = rt->info[0].rateCode;
@@ -2828,7 +2848,50 @@ diff -r d6324adcc21f sys/dev/ic/athrate-amrr.c
  	}
  }
  
-@@ -424,8 +434,9 @@
+@@ -386,7 +396,7 @@
+ {
+ 	struct ath_softc *sc = arg;
+ 	struct amrr_node *amn = ATH_NODE_AMRR(ATH_NODE (ni));
+-	int old_rate;
++	int rix;
+ 
+ #define is_success(amn) \
+ (amn->amn_tx_try1_cnt  < (amn->amn_tx_try0_cnt/10))
+@@ -394,12 +404,8 @@
+ (amn->amn_tx_try0_cnt > 10)
+ #define is_failure(amn) \
+ (amn->amn_tx_try1_cnt > (amn->amn_tx_try0_cnt/3))
+-#define is_max_rate(ni) \
+-((ni->ni_txrate + 1) >= ni->ni_rates.rs_nrates)
+-#define is_min_rate(ni) \
+-(ni->ni_txrate == 0)
+ 
+-	old_rate = ni->ni_txrate;
++	rix = amn->amn_rix;
+   
+   	DPRINTF (sc, "cnt0: %d cnt1: %d cnt2: %d cnt3: %d -- threshold: %d\n",
+ 		 amn->amn_tx_try0_cnt,
+@@ -410,22 +416,23 @@
+   	if (is_success (amn) && is_enough (amn)) {
+ 		amn->amn_success++;
+ 		if (amn->amn_success == amn->amn_success_threshold &&
+-  		    !is_max_rate (ni)) {
+-  			amn->amn_recovery = 1;
+-  			amn->amn_success = 0;
+-  			ni->ni_txrate++;
+-			DPRINTF (sc, "increase rate to %d\n", ni->ni_txrate);
++		    rix + 1 < ni->ni_rates.rs_nrates) {
++			amn->amn_recovery = 1;
++			amn->amn_success = 0;
++			rix++;
++			DPRINTF (sc, "increase rate to %d\n", rix_;
+   		} else {
+ 			amn->amn_recovery = 0;
+ 		}
+   	} else if (is_failure (amn)) {
+   		amn->amn_success = 0;
+-  		if (!is_min_rate (ni)) {
++		if (rix > 0) {
    			if (amn->amn_recovery) {
    				/* recovery failure. */
    				amn->amn_success_threshold *= 2;
@@ -2840,7 +2903,33 @@ diff -r d6324adcc21f sys/dev/ic/athrate-amrr.c
   				DPRINTF (sc, "decrease rate recovery thr: %d\n", amn->amn_success_threshold);
    			} else {
    				/* simple failure. */
-@@ -455,43 +466,49 @@
+@@ -433,13 +440,13 @@
+  				DPRINTF (sc, "decrease rate normal thr: %d\n", amn->amn_success_threshold);
+   			}
+ 			amn->amn_recovery = 0;
+-  			ni->ni_txrate--;
++			rix--;
+    		} else {
+ 			amn->amn_recovery = 0;
+ 		}
+ 
+    	}
+-	if (is_enough (amn) || old_rate != ni->ni_txrate) {
++	if (is_enough (amn) || rix != amn->amn_rix) {
+ 		/* reset counters. */
+ 		amn->amn_tx_try0_cnt = 0;
+ 		amn->amn_tx_try1_cnt = 0;
+@@ -447,51 +454,57 @@
+ 		amn->amn_tx_try3_cnt = 0;
+ 		amn->amn_tx_failure_cnt = 0;
+ 	}
+-	if (old_rate != ni->ni_txrate) {
+-		ath_rate_update(sc, ni, ni->ni_txrate);
++	if (rix != amn->amn_rix) {
++		ath_rate_update(sc, ni, rix);
+ 	}
+ }
+ 
  static void
  ath_ratectl(void *arg)
  {
@@ -2907,7 +2996,7 @@ diff -r d6324adcc21f sys/dev/ic/athrate-amrr.c
  }
  
  struct ath_ratectrl *
-@@ -501,7 +518,7 @@
+@@ -501,7 +514,7 @@
  
  	asc = malloc(sizeof(struct amrr_softc), M_DEVBUF, M_WAITOK|M_ZERO);
  	asc->arc.arc_space = sizeof(struct amrr_node);
@@ -2916,9 +3005,40 @@ diff -r d6324adcc21f sys/dev/ic/athrate-amrr.c
  	ath_rate_sysctlattach(sc);
  
  	return &asc->arc;
-diff -r d6324adcc21f sys/dev/ic/athrate-onoe.c
---- a/sys/dev/ic/athrate-onoe.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/athrate-onoe.c	Wed Aug 02 10:21:04 2023 +1200
+diff -r f00ade18273e sys/dev/ic/athrate-amrr.h
+--- a/sys/dev/ic/athrate-amrr.h	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/ic/athrate-amrr.h	Wed Aug 02 16:29:51 2023 +1200
+@@ -50,6 +50,7 @@
+ 
+ /* per-node state */
+ struct amrr_node {
++	int		amn_rix;	/* current rate index */
+   	/* AMRR statistics for this node */
+   	u_int           amn_tx_try0_cnt;
+   	u_int           amn_tx_try1_cnt;
+diff -r f00ade18273e sys/dev/ic/athrate-onoe.c
+--- a/sys/dev/ic/athrate-onoe.c	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/ic/athrate-onoe.c	Wed Aug 02 16:29:51 2023 +1200
+@@ -199,7 +199,6 @@
+ 	    ni->ni_rates.rs_nrates > 0 ?
+ 		(ni->ni_rates.rs_rates[rate] & IEEE80211_RATE_VAL) / 2 : 0);
+ 
+-	ni->ni_txrate = rate;
+ 	/*
+ 	 * Before associating a node has no rate set setup
+ 	 * so we can't calculate any transmit codes to use.
+@@ -209,8 +208,9 @@
+ 	 */
+ 	if (ni->ni_rates.rs_nrates == 0)
+ 		goto done;
+-	on->on_tx_rix0 = sc->sc_rixmap[
+-		ni->ni_rates.rs_rates[rate] & IEEE80211_RATE_VAL];
++	on->on_rix = rate;
++	ni->ni_txrate = ni->ni_rates.rs_rates[rate] & IEEE80211_RATE_VAL;
++	on->on_tx_rix0 = sc->sc_rixmap[ni->ni_txrate];
+ 	on->on_tx_rate0 = rt->info[on->on_tx_rix0].rateCode;
+ 	
+ 	on->on_tx_rate0sp = on->on_tx_rate0 |
 @@ -267,11 +267,12 @@
  ath_rate_ctl_start(struct ath_softc *sc, struct ieee80211_node *ni)
  {
@@ -2997,6 +3117,28 @@ diff -r d6324adcc21f sys/dev/ic/athrate-onoe.c
  	}
  }
  
+@@ -403,7 +411,7 @@
+ 		on->on_tx_ok, on->on_tx_err, on->on_tx_retr,
+ 		on->on_tx_upper, dir);
+ 
+-	nrate = ni->ni_txrate;
++	nrate = on->on_rix;
+ 	switch (dir) {
+ 	case 0:
+ 		if (enough && on->on_tx_upper > 0)
+@@ -428,10 +436,10 @@
+ 		break;
+ 	}
+ 
+-	if (nrate != ni->ni_txrate) {
++	if (nrate != on->on_rix) {
+ 		DPRINTF(sc, "%s: %dM -> %dM (%d ok, %d err, %d retr)\n",
+ 		    __func__,
+-		    (rs->rs_rates[ni->ni_txrate] & IEEE80211_RATE_VAL) / 2,
++		    ni->ni_txrate / 2,
+ 		    (rs->rs_rates[nrate] & IEEE80211_RATE_VAL) / 2,
+ 		    on->on_tx_ok, on->on_tx_err, on->on_tx_retr);
+ 		ath_rate_update(sc, ni, nrate);
 @@ -442,25 +450,31 @@
  static void
  ath_ratectl(void *arg)
@@ -3035,9 +3177,29 @@ diff -r d6324adcc21f sys/dev/ic/athrate-onoe.c
  }
  
  static void
-diff -r d6324adcc21f sys/dev/ic/athrate-sample.c
---- a/sys/dev/ic/athrate-sample.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/athrate-sample.c	Wed Aug 02 10:21:04 2023 +1200
+diff -r f00ade18273e sys/dev/ic/athrate-onoe.h
+--- a/sys/dev/ic/athrate-onoe.h	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/ic/athrate-onoe.h	Wed Aug 02 16:29:51 2023 +1200
+@@ -52,6 +52,7 @@
+ 
+ /* per-node state */
+ struct onoe_node {
++	int		on_rix;		/* current rate index */
+ 	u_int		on_tx_ok;	/* tx ok pkt */
+ 	u_int		on_tx_err;	/* tx !ok pkt */
+ 	u_int		on_tx_retr;	/* tx retry count */
+diff -r f00ade18273e sys/dev/ic/athrate-sample.c
+--- a/sys/dev/ic/athrate-sample.c	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/ic/athrate-sample.c	Wed Aug 02 16:29:51 2023 +1200
+@@ -346,7 +346,7 @@
+ 	    			 * set the visible txrate for this node
+ 			         * to the rate of small packets
+ 			         */
+-				an->an_node.ni_txrate = ndx;
++				an->an_node.ni_txrate = sn->rates[ndx].rate;
+ 			}
+ 		}
+ 	}
 @@ -648,14 +648,14 @@
  ath_rate_ctl_reset(struct ath_softc *sc, struct ieee80211_node *ni)
  {
@@ -3063,6 +3225,24 @@ diff -r d6324adcc21f sys/dev/ic/athrate-sample.c
  
          DPRINTF(sc, "%s: %s size 1600 rate/tt", __func__, ether_sprintf(ni->ni_macaddr));
  
+@@ -694,7 +695,7 @@
+ 	DPRINTF(sc, "%s\n", "");
+ 	
+ 	/* set the visible bit-rate to the lowest one available */
+-	ni->ni_txrate = 0;
++	ni->ni_txrate = sn->rates[0].rate;
+ 	sn->num_rates = ni->ni_rates.rs_nrates;
+ 	
+ 	for (y = 0; y < NUM_PACKET_SIZE_BINS; y++) {
+@@ -737,7 +738,7 @@
+ 		sn->stats[1][sn->num_rates-1].perfect_tx_time
+ 	);
+ 
+-	ni->ni_txrate = sn->current_rate[0];
++	ni->ni_txrate = sn->rates[sn->current_rate[0]].rate;
+ #undef RATE
+ }
+ 
 @@ -753,9 +754,10 @@
   * Reset the rate control state for each 802.11 state transition.
   */
@@ -3085,9 +3265,9 @@ diff -r d6324adcc21f sys/dev/ic/athrate-sample.c
  	}
  }
  
-diff -r d6324adcc21f sys/dev/ic/athrate.h
---- a/sys/dev/ic/athrate.h	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/athrate.h	Wed Aug 02 10:21:04 2023 +1200
+diff -r f00ade18273e sys/dev/ic/athrate.h
+--- a/sys/dev/ic/athrate.h	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/ic/athrate.h	Wed Aug 02 16:29:51 2023 +1200
 @@ -111,7 +111,7 @@
   * Important mostly as the analog to ath_rate_newassoc when operating
   * in station mode.
@@ -3097,9 +3277,9 @@ diff -r d6324adcc21f sys/dev/ic/athrate.h
  
  /*
   * Transmit handling.
-diff -r d6324adcc21f sys/dev/ic/athvar.h
---- a/sys/dev/ic/athvar.h	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/ic/athvar.h	Wed Aug 02 10:21:04 2023 +1200
+diff -r f00ade18273e sys/dev/ic/athvar.h
+--- a/sys/dev/ic/athvar.h	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/ic/athvar.h	Wed Aug 02 16:29:51 2023 +1200
 @@ -95,7 +95,6 @@
  /* driver-specific node state */
  struct ath_node {
@@ -3193,9 +3373,9 @@ diff -r d6324adcc21f sys/dev/ic/athvar.h
  void	ath_sysctlattach(struct ath_softc *);
  
  extern int ath_dwelltime;
-diff -r d6324adcc21f sys/dev/pci/if_ath_pci.c
---- a/sys/dev/pci/if_ath_pci.c	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/dev/pci/if_ath_pci.c	Wed Aug 02 10:21:04 2023 +1200
+diff -r f00ade18273e sys/dev/pci/if_ath_pci.c
+--- a/sys/dev/pci/if_ath_pci.c	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/dev/pci/if_ath_pci.c	Wed Aug 02 16:29:51 2023 +1200
 @@ -78,6 +78,7 @@
  
  #include <external/isc/atheros_hal/dist/ah.h>
@@ -3212,9 +3392,9 @@ diff -r d6324adcc21f sys/dev/pci/if_ath_pci.c
  		pmf_device_suspend(self, &sc->sc_qual);
  	} else
  		aprint_error_dev(self, "couldn't establish power handler\n");
-diff -r d6324adcc21f sys/external/isc/atheros_hal/dist/ah.h
---- a/sys/external/isc/atheros_hal/dist/ah.h	Tue Jul 18 21:26:39 2023 +0200
-+++ b/sys/external/isc/atheros_hal/dist/ah.h	Wed Aug 02 10:21:04 2023 +1200
+diff -r f00ade18273e sys/external/isc/atheros_hal/dist/ah.h
+--- a/sys/external/isc/atheros_hal/dist/ah.h	Sun Jul 30 21:50:13 2023 -0700
++++ b/sys/external/isc/atheros_hal/dist/ah.h	Wed Aug 02 16:29:51 2023 +1200
 @@ -462,10 +462,12 @@
  typedef uint16_t HAL_CTRY_CODE;		/* country code */
  typedef uint16_t HAL_REG_DOMAIN;		/* regulatory domain code */
