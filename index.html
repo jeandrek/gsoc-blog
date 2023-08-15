@@ -15,6 +15,29 @@
     <main>
       <article>
 	<h2>
+	  <a id="athn-4-usb" href="#athn-4-usb">athn(4) USB</a>
+	</h2>
+	<p class="date">
+	  <time datetime="2023-08-15">15<sup>th</sup> August, 2023</time>
+	</p>
+	<p>
+	  I do not yet have an Atheros USB Wi-Fi dongle, but I should soon.  In
+	  spite of that, a while ago I began trying to convert athn(4) for USB
+	  &ndash; first I tried without usbwifi (on a branch in the git
+	  repository, and
+	  <a href="https://jonathan50.github.io/gsoc-blog/athnusb1.patch">
+	    here</a>).  I also tried with usbwifi, changing sc_ic to a pointer
+	  (probably not the best way to go about it; that is on the branch
+	  "usbwifi" and
+	  <a href="https://jonathan50.github.io/gsoc-blog/athnusb2.patch">
+	     here</a>).  Of course neither are at all tested at this point; if
+	  the former doesn't work, it would probably be easier to fix.  Both
+	  compiled and PCI athn still works on the latter.
+	</p>
+      </article>
+      <hr>
+      <article>
+	<h2>
 	  <a id="rate-adaption" href="#rate-adaption">Rate adaption</a>
 	</h2>
 	<p class="date">
