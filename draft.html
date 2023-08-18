@@ -55,10 +55,10 @@
 	tech-net mailing list.
       </p>
       <p>
-	Since both ath(4) and athn(4) are working, I hope to likely have the
-	code merged into the wifi topic of NetBSD's Mercurial repository soon
-	(after making any changes in response to feedback I receive from
-	Martin).
+	On 11 August my latter patch for athn(4) based on James Browning's was
+	merged into the wifi topic of NetBSD's Mercurial repository (but not
+	ath yet &ndash; athn is the preferred driver for the chipsets it
+	supports).
       </p>
       <p>
 	Initially, I didn't have any plan of converting athn(4) for USB (in
@@ -70,10 +70,17 @@
       <h2>What to do from here</h2>
       <p>
 	Soon I will figure out if what I've done for USB works, and then I plan
-	on getting it to work if it doesn't (which should not take long).
-	Presumably the code that doesn't involve USB can first be merged, and
-	then the best approach for converting athn(4) at USB can be evaluated
-	(which is the intention).
+	on getting it to work if it doesn't (which should not take long).  Then
+	the best approach for converting athn(4) at USB (with or without
+	usbwifi) can be evaluated (which is the intention).
+      </p>
+      <p>
+	Since ath(4) is working, I hope to likely have the code merged into the
+	wifi topic of NetBSD's Mercurial repository soon (after making any
+	changes in response to feedback I receive from Martin).  In the case of
+	ath(4) there is one kludge (a constant was defined both in the Atheros
+	HAL and the new Wi-Fi stack, so I added an #ifndef to the former) that
+	should probably still be dealt with.
       </p>
       <hr>
       <h2><a id="code">Code</a></h2>
