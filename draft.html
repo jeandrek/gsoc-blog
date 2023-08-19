@@ -105,7 +105,10 @@
 	</tr>
 	<tr class="midtable">
 	  <th>athn2</th>
-	  <td>Conversion working from James Browning's patch</td>
+	  <td>
+	    Conversion working from James Browning's patch (now the same as
+	    main)
+	  </td>
 	</tr>
 	<tr>
 	  <th>athn-usb</th>
@@ -114,6 +117,36 @@
 	<tr><th>usbwifi</th></tr>
 	<tr><th>usbwifi-alternative</th></tr>
       </table>
+      <p>
+	Some of the most important files (to get a better idea, look at the
+	commit history or patches; all the following are in
+	<a href="https://github.com/Jonathan50/netbsd-src-gsoc/tree/main/sys/dev/ic">
+	  sys/dev/ic</a>):
+	<table>
+	  <tr class="midtable">
+	    <th>ath(4)</th>
+	    <td>
+	      <a href="https://github.com/Jonathan50/netbsd-src-gsoc/blob/main/sys/dev/ic/athvar.h">
+		athvar.h</a>
+	      <a href="https://github.com/Jonathan50/netbsd-src-gsoc/blob/main/sys/dev/ic/ath.c">
+		ath.c</a>
+	    </td>
+	  </tr>
+	  <tr>
+	    <th>athn(4)</th>
+	    <td>
+	      <a href="https://github.com/Jonathan50/netbsd-src-gsoc/blob/main/sys/dev/ic/athnvar.h">
+		athnvar.h</a>
+	      <a href="https://github.com/Jonathan50/netbsd-src-gsoc/blob/main/sys/dev/ic/athn.c">
+		athn.c</a>
+	      <a href="https://github.com/Jonathan50/netbsd-src-gsoc/blob/main/sys/dev/ic/arn5008.c">
+		arn5008.c</a>
+	      <a href="https://github.com/Jonathan50/netbsd-src-gsoc/blob/main/sys/dev/ic/arn9003.c">
+		arn9003.c</a>
+	    </td>
+	  </tr>
+	</table>
+      </p>
       <h3>Patches</h3>
       <table>
 	<tr class="midtable">
@@ -122,11 +155,15 @@
 	</tr>
 	<tr>
 	  <th rowspan="4">athn(4) conversion</th>
-	  <td><a href="athn-diff.patch">Diff against code w/ James Browning's patch</a></td>
+	  <td>
+	    <a href="athn-diff.patch">
+	      Diff against code w/ James Browning's patch</a>
+	  </td>
 	</tr>
 	<tr>
 	  <td>
-	    <a href="athn-progress.patch">Complete patch against unconverted driver</a>
+	    <a href="athn-progress.patch">
+	      Complete patch against unconverted driver</a>
 	    (same code as above)
 	  </td>
 	</tr>
