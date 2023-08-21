@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>GSoC 2023 progress blog</title>
+    <link rel="stylesheet" href="style.css" type="text/css">
+  </head>
+  <body>
+    <header>
+      <h1>Summer of Code 2023 progress blog</h1>
+      <p class="subtitle">NetBSD</p>
+      <p class="subtitle">Update Atheros Wi-Fi driver(s) for new Wi-Fi stack</p>
+      <p class="subtitle">Jeandre Kruger</p>
+    </header>
+    <main>
+      <p><a href="index.html">View final submission</a></p>
+      <article>
+	<h2>
+	  <a id="athn-4-usb" href="#athn-4-usb">athn(4) USB</a>
+	</h2>
+	<p class="date">
+	  <time datetime="2023-08-15">15<sup>th</sup> August, 2023</time>
+	</p>
+	<p>
+	  I do not yet have an Atheros USB Wi-Fi dongle, but I should soon.  In
+	  spite of that, a while ago I began trying to convert athn(4) for USB
+	  &ndash; first I tried without usbwifi (on a branch in the git
+	  repository, and
+	  <a href="https://jonathan50.github.io/gsoc-blog/athnusb1.patch">
+	    here</a>).  I also tried with usbwifi, changing sc_ic to a pointer
+	  (probably not the best way to go about it; that is on the branch
+	  "usbwifi" and
+	  <a href="https://jonathan50.github.io/gsoc-blog/athnusb2.patch">
+	     here</a>).  Of course neither are at all tested at this point; if
+	  the former doesn't work, it would probably be easier to fix.  Both
+	  compiled and PCI athn still works on the latter.
+	</p>
+      </article>
+      <hr>
+      <article>
+	<h2>
+	  <a id="rate-adaption" href="#rate-adaption">Rate adaption</a>
+	</h2>
+	<p class="date">
+	  <time datetime="2023-08-02">2<sup>nd</sup> August, 2023</time>
+	</p>
+	<p>
+	  Yesterday added calls to ratectl to athn.  Now I realized that
+	  <code>ni_txrate</code> has changed in meaning (from being an index
+	  to rs_rates to the rate itself) and fixed ath(4) and athn(4)
+	  accordingly.
+	</p>
+      </article>
+      <hr>
+      <article>
+	<h2>
+	  <a id="testing" href="#testing">Testing</a>
+	</h2>
+	<p class="date">
+	  <time datetime="2023-07-31">31<sup>st</sup> July, 2023</time>
+	</p>
+	<p>
+	  Here is some code to help confirm <code>get_radiocaps</code> behaves
+	  the same on the old & new wifi stack.  It may not be perfect but
+	  there is a slim chance someone could take advantage of it or improve
+	  it somehow.
+	</p>
+	<pre>static void
+chan_flags2string(char *str, uint32_t flags)
+{
+	const char *flag_names[] = {
+		"PRIV0", "PRIV1", "PRIV2", "PRIV3", "TURBO", "CCK", "OFDM",
+		"2GHZ", "5GHZ", "PASSIVE", "DYN", "GFSK", "GSM", "STURBO",
+		"HALF", "QUARTER", "HT20", "HT40U", "HT40D", "DFS",
+		"4MSXMIT", "NOADHOC", "NOHOSTAP", "11D", "VHT20", "VHT40U",
+		"VHT40D", "VHT80", "VHT80_80", "VHT160"
+	};
+	int pow = nitems(flag_names), i = 0;
+	memset(str, 0, 200);
+	do {
+		pow--;
+		if (flags & (1 << pow)) {
+			if (i != 0) str[i++] = ',';
+			strcat(str, flag_names[pow]);
+			i += strlen(flag_names[pow]);
+		}
+	} while (pow > 0);
+	str[i] = 0;
+}
+
+static void
+display_channels(struct ieee80211com *ic)
+{
+#define NEWSTACK
+	char flagstr[200];
+
+	printf("Channels by IEEE number:\n");
+#ifdef NEWSTACK
+	struct {uint16_t freq; uint32_t flags;} byieee[256] = {0};
+	for (int i = 0; i < ic->ic_nchans; i++) {
+		int n = ic->ic_channels[i].ic_ieee;
+		byieee[n].freq = ic->ic_channels[i].ic_freq;
+		byieee[n].flags |= ic->ic_channels[i].ic_flags;
+	}
+	for (int i = 0; i < 256; i++) {
+		if (byieee[i].flags != 0) {
+			chan_flags2string(flagstr, byieee[i].flags);
+			printf("%d\t%d\t%x\t%s\n", i,
+				byieee[i].freq,
+				byieee[i].flags, flagstr);
+		}
+	}
+#else
+	for (int i = 0; i < IEEE80211_CHAN_MAX; i++) {
+		if (ic->ic_channels[i].ic_freq != 0) {
+			chan_flags2string(flagstr, ic->ic_channels[i].ic_flags);
+			printf("%d\t%d\t%x\t%s\n", i,
+				ic->ic_channels[i].ic_freq,
+				ic->ic_channels[i].ic_flags, flagstr);
+		}
+	}
+#endif
+
+	printf("Channels per mode:\n");
+#ifdef NEWSTACK
+	for (int i = 0; i < ic->ic_nchans; i++) {
+		chan_flags2string(flagstr, ic->ic_channels[i].ic_flags);
+		printf("%d\t%d\t%x\t%s\n",
+			ic->ic_channels[i].ic_ieee,
+			ic->ic_channels[i].ic_freq,
+			ic->ic_channels[i].ic_flags, flagstr);
+	}
+#else
+#define ADDPERMODE(_i, _freq, _flags)		\
+	do {					\
+		permode[nchans].ieee = _i;	\
+		permode[nchans].freq = _freq;	\
+		permode[nchans].flags = _flag;	\
+		nchans++;			\
+	} while (0);
+	struct {
+		uint8_t ieee;
+		uint32_t flags;
+		uint16_t freq;
+	} *permode;
+	int nchans = 0;
+	permode = kmem_zalloc(1024*sizeof(*permode), KM_SLEEP);
+	for (int i = 0; i < IEEE80211_CHAN_MAX; i++) {
+		uint16_t freq = ic->ic_channels[i].ic_freq;
+		uint32_t flags = ic->ic_channels[i].ic_flags;
+		if (IEEE80211_IS_CHAN_A(&ic->ic_channels[i])) {
+			ADDPERMODE(i, freq, IEEE80211_CHAN_A);
+			if (flags & IEEE80211_CHAN_TURBO)
+				ADDPERMODE(i, freq,
+				    IEEE80211_CHAN_A | IEEE80211_CHAN_TURBO);
+		}
+		if (IEEE80211_IS_CHAN_B(&ic->ic_channels[i])) {
+			ADDPERMODE(i, freq, IEEE80211_CHAN_B);
+		}
+		if (IEEE80211_IS_CHAN_G(&ic->ic_channels[i])
+		    || IEEE80211_IS_CHAN_G(&ic->ic_channels[i])) {
+			ADDPERMODE(i, freq, IEEE80211_CHAN_G);
+			if (flags & IEEE80211_CHAN_TURBO)
+				ADDPERMODE(i, freq,
+				    IEEE80211_CHAN_G | IEEE80211_CHAN_TURBO);
+		}
+	}
+	for (int i = 0; i < nchans; i++) {
+		chan_flags2string(flagstr, permode[i].flags);
+		printf("%d\t%d\t%x\t%s\n",
+			permode[i].ieee,
+			permode[i].freq,
+			permode[i].flags, flagstr);
+	}
+	kmem_free(permode, 1024*sizeof(*permode));
+#undef ADDPERMODE
+#endif
+
+#undef NEWSTACK
+}</pre>
+      </article>
+      <hr>
+      <article>
+	<h2>
+	  <a id="rate-adaption-ath-4" href="#rate-adaption-ath-4">Rate adaption &ndash; ath(4)</a>
+	</h2>
+	<p class="date">
+	  <time datetime="2023-07-28">28<sup>th</sup> July, 2023</time>
+	</p>
+	<p>
+	  Got athrate-amrr & athrate-onoe working (before I only had
+	  athrate-sample).  This was easy enough because everything
+	  rate-adaption-related is in a single driver-specific module (though
+	  ultimately it will probably be redundant because of net80211).
+	</p>
+	<p>
+	  <a href="https://cgit.freebsd.org/src/commit/sys/dev/ath/ath_rate/sample/sample.c?id=a6a308a4df69b5b9c7f7da2f06890b227015ba82">
+	    This commit</a>
+	  could be relevant to athrate-sample (then again net80211 may make it
+	  obsolete).
+	</p>
+      </article>
+      <hr>
+      <article>
+	<h2>
+	  <a id="athn-4-starting-over-based-on-existing-patch" href="#athn-4-starting-over-based-on-existing-patch">athn(4) &ndash; starting over based on existing patch</a>
+	</h2>
+	<p class="date">
+	  <time datetime="2023-07-27">27<sup>th</sup> July, 2023</time>
+	</p>
+	<p>
+	  Martin (my mentor) recently let me know of an existing patch for
+	  athn(4) written by James Brown and suggested I could use parts or
+	  merge with my effort.  Since it's written by someone more
+	  knowledgeable I'll take the latter path.  Some of the changes are
+	  very similar; others are just more sensible, or reflect stuff of
+	  which I was ignorant.  So I changed it enough to compile and work as
+	  before, merging it with a bit of my previous work.  From here I can
+	  look into rate adaption, etc.
+	</p>
+	<p>
+	  Also made a few changes to ath(4) &ndash; ideally hostapd(8)
+	  would work (if that's possible at this point), but not yet.
+	</p>
+      </article>
+      <hr>
+      <article>
+	<h2>
+	  <a id="some-gradual-changes-ath-4-athn-4" href="#some-gradual-changes-ath-4-athn-4">Some gradual changes &ndash; ath(4)/athn(4)</a>
+	</h2>
+	<p class="date">
+	  <time datetime="2023-07-20">20<sup>th</sup> July, 2023</time>
+	</p>
+	<p>
+	  I've made a few gradual changes to athn(4).
+	  <code>ieee80211_tx_complete</code> is now called, and presumably
+	  <code>athn_get_radiocaps</code> behaves now as did
+	  <code>athn_get_chanlist</code> before.  It works on 2.4GHz and 5GHz.
+	</p>
+	<p>
+	  Also fixed (I believe) <code>[io]errors</code> on both drivers.
+	</p>
+      </article>
+      <hr>
+      <article>
+	<h2>
+	  <a id="athn-4" href="#athn-4">athn(4)</a>
+	</h2>
+	<p class="date">
+	  <time datetime="2023-07-08">8<sup>th</sup> July, 2023</time>
+	</p>
+	<p>
+	  athn(4) appears to be in a working state after some more changes.  The
+	  changes will need to be cleaned up, and I haven't yet figured out what
+	  to do with rate adaption.
+	</p>
+      </article>
+      <hr>
+      <article>
+	<h2>
+	  <a id="ath-4-athn-4" href="#ath-4-athn-4">ath(4)/athn(4)</a>
+	</h2>
+	<p class="date">
+	  <time datetime="2023-07-04">4<sup>th</sup> July, 2023</time>
+	</p>
+	<p>
+	  Made some minor changes to ath(4).  Since 27/06 I've worked a bit on
+	  converting athn(4) (on a separate git branch) &ndash; so far it
+	  compiles and boots but creating a VAP causes a panic.
+	</p>
+	<p>
+	  <a href="ath-progress.patch">Patch of all progress on ath(4)</a>
+	</p>
+      </article>
+      <hr>
+      <article>
+	<h2>
+	  <a id="encap-caps-ath-4" href="#encap-caps-ath-4">encap/caps &ndash; ath(4)</a>
+	</h2>
+	<p class="date">
+	  <time datetime="2023-06-22">22<sup>nd</sup> June, 2023</time>
+	</p>
+	<p>
+	  Turns out I hadn't actually fixed that.  It happened whenever
+	  <code>ath_start</code> was invoked by the <code>ath_tx_proc</code>
+	  family (without <code>IEEE80211_TX_LOCK</code>) and then called
+	  <code>ieee80211_encap</code>.  Removing the call to
+	  <code>ieee80211_encap</code> would fix this as the call was
+	  <a href="https://cgit.freebsd.org/src/commit/sys/dev/ath/if_ath.c?id=339ccfb3918a44878a6c005a3db37155e4d1d142">
+	    hoisted up into net80211</a>; the only reason it worked previously
+	  was because I mixed up <code>ic_caps</code> with
+	  <code>ic_cryptocaps</code>.
+	</p>
+	<p>
+	  All of that is fixed now, except that if the code sets
+	  <code>ic_cryptocaps</code> then wifi no longer works; so for now it's
+	  0.  No crashes yet since.
+	</p>
+      </article>
+      <hr>
+      <article>
+	<h2>
+	  <a id="fixes-ath-4" href="#fixes-ath-4">Fixes &ndash; ath(4)</a>
+	</h2>
+	<p class="date">
+	  <time datetime="2023-06-13">13<sup>th</sup> June, 2023</time>
+	</p>
+	<p>
+	  I couldn't reproduce the crash I thought was caused by wpa_supplicant
+	  mentioned in the last post.  However, it did tend to crash when
+	  streaming video for more than a few minutes.  <code>M_CLEARCTX</code>
+	  seemed to fix this, and it hasn't crashed since (ignoring mdnsd).
+	  Reenabling <code>ath_chan_change</code> fixed the "bad rate" messages
+	  reported by athrate-sample.  But reenabling <code>ath_watchdog</code>
+	  results in occasional "device timeouts."
+	</p>
+      </article>
+      <hr>
+      <article>
+	<h2>
+	  <a id="wifi-working-ath-4" href="#wifi-working-ath-4">Wi-Fi working &ndash; ath(4)</a>
+	</h2>
+	<p class="date">
+	  <time datetime="2023-06-06">6<sup>th</sup> June, 2023</time>
+	</p>
+	<p>
+	  After making the code regarding getting channels behave (mostly)
+	  correctly, adding <code>IEEE80211_C_WPA</code> to
+	  <code>ic_caps</code>, and restoring/adjusting
+	  <code>athrate-sample.c</code>, wpa_supplicant connects to my network
+	  and Wi-Fi mostly works(!) ignoring some kernel messages about "bad
+	  rates."  Doubtless some things still need to be corrected (and other
+	  things need to be cleaned up, fixed, and made less hacky).  mdnsd
+	  (Bonjour) causes an assertion to fail during some ioctl.
+	  wpa_supplicant also sometimes seems to crash the system based on the
+	  exact sequence of commands used to set Wi-Fi up, so I'll also need to
+	  perform some debugging.
+	</p>
+      </article>
+      <hr>
+      <article>
+	<h2>
+	  <a id="creating-a-vap-scanning" href="#creating-a-vap-scanning">Creating a VAP & scanning</a>
+	</h2>
+	<p class="date">
+	  <time datetime="2023-06-05">5<sup>th</sup> June, 2023</time>
+	</p>
+	<p>
+	  The code is now on
+	  <a href="https://github.com/Jonathan50/netbsd-src-gsoc">GitHub</a>.
+	  Re-enabling code, adjusting as necessary and incorporating some bits
+	  from FreeBSD brought the driver to the point (around last Friday [per
+	  my report on tech-net]) where one can create a VAP and scan for
+	  networks.  Since then adding <code>ath_recv_mgmt</code> back seems to
+	  have somehow made scanning faster (&hellip;or maybe it didn't really).
+	  I have not yet been able to join a network with wpa_supplicant, and
+	  there's still a lot that I might need to try to better understand.
+	</p>
+	<pre>Successfully initialized wpa_supplicant
+ioctl[SIOCS80211, op=26, val=3, arg_len=0]: Operation not supported
+wpa_driver_bsd_scan: failed to set wpa: Operation not supported
+wlan0: CTRL-EVENT-SCAN-FAILED ret=-1 retry=1
+&lt;etc.&gt;</pre>
+      </article>
+      <hr>
+      <article>
+	<h2>
+	  <a id="getting-started-trying-stuff-out" href="#getting-started-trying-stuff-out">Getting started trying stuff out</a>
+	</h2>
+        <p class="date">
+          <time datetime="2023-05-25">25<sup>th</sup> May, 2023</time>
+        </p>
+        <p>
+          Trying to build athn(4) on the wifi topic results in a lot of errors
+          in multiple arnXXXX.c files.  Trying to build ath(4) on the other hand
+          seemed to result in fewer errors.  So it might be better to convert
+          ath first.
+        </p>
+        <p>
+          I substituted <code>ic_macaddr</code> for <code>ic_myaddr</code>;
+          made <code>newstate</code> take a VAP; replaced
+          <code>ic->ic_ifp->if_softc</code> with <code>ic->ic_softc</code>;
+          changed some other references; haphazardly disabled swathes of
+          (important) code (a lot of important functions); and added a
+          few random stopgaps.  Eventually it compiled without error;
+          <code>ieee80211_ifattach</code> panicked but taking the contents of
+          <code>rtwn_get_radiocaps</code> served as a stopgap.  Thus it was
+          able to boot, and <code>ath0</code> was shown by sysctl.
+        </p>
+        <p>
+          Creating a VAP with ifconfig is (unsurprisingly) still far away (it
+          reported "STA mode not supported").
+        </p>
+      </article>
+      <hr>
+      <article>
+	<h2>
+	  <a id="basic-differences-in-new-drivers" href="#basic-differences-in-new-drivers">Basic differences in new drivers</a>
+	</h2>
+	<p class="date">
+	  <time datetime="2023-05-18">18<sup>th</sup> May, 2023</time>
+	</p>
+	<p>
+	  As noted by
+	  <a href="https://wiki.netbsd.org/Converting_drivers_to_the_new_wifi_stack/">
+	    Martin's guide</a>,
+	  the main difference in new style drivers is the VAP concept.  To that
+	  end FreeBSD ath(4) defines <code>struct ath_vap</code>, deriving from
+	  <code>struct ieee80211vap</code>.  So whereas before it would look
+	  something like this:
+	</p>
+	<img src="old.png" alt="Old representation" height="174">
+	<p>
+	  Now for any driver, the representation will look more or less like
+	  this: 
+	</p>
+	<img src="new.png" alt="New representation" height="294">
+	<p>
+	  By comparing with FreeBSD ath(4) & the new rtwn driver:
+	</p>
+	<ul>
+	  <li>
+	    Some new functions exist e.g. <code>ath_vap_create</code>,
+	    <code>ath_vap_delete</code>, <code>ath_parent</code>.
+	  </li>
+	  <li>
+	    Methods previously existing on the <code>struct ifnet</code> are
+	    gone, e.g. <code>if_start</code> (replaced by
+	    <code>ic_transmit</code>) <code>if_watchdog</code>,
+	    <code>if_ioctl</code> and <code>if_init</code>.
+	  </li>
+	  <li>
+	    Some methods previously existing on <code>struct ieee80211com</code>
+	    are shifted to the VAP e.g. <code>iv_recv_mgmt</code>,
+	    <code>iv_newstate</code>.
+	  </li>
+	  <li>
+	    <code>sc_ec</code> is gone (or rather never existed in FreeBSD).
+	    This only seems to affect the handling of multicast addresses.
+	  </li>
+	</ul>
+      </article>
+      <hr>
+      <article>
+	<h2>
+	  <a id="basic-differences-ath-vs-athn" href="#basic-differences-ath-vs-athn">Basic differences (ath vs athn)</a>
+	</h2>
+        <p class="date">
+          <time datetime="2023-05-12">12<sup>th</sup> May, 2023</time>
+        </p>
+        <p>
+          ath(4) and athn(4) support somewhat different sets of hardware.  The
+          most obvious difference in implementation is that ath(4) uses the
+          Atheros HAL.  This was initially a blob but
+          <a href="https://www.phoronix.com/news/Njc1MA">
+            open-sourced in 2009</a>.
+          According to the
+          <a href="https://wiki.freebsd.org/dev/ath_hal%284%29">
+            FreeBSD wiki</a>,
+        </p>
+        <blockquote>
+          <p>The Atheros HAL is an abstraction layer which attempts to hide much of the card specific configuration from the rest of the atheros wireless driver.</p>
+          <p>The HAL takes care of the MAC, baseband and radio. It exports a set of routines which allow the atheros wireless driver to do certain tasks (set channel, configure TX queue, queue TX packet, queue RX buffer, setup interrupts, do calibration, set/get TX power, configure beacon parameters, enter power saving/sleep mode, etc.)</p>
+        </blockquote>
+        <p>
+          It doesn't seem that it'll require any changes (except ah_osdep.c).
+        </p>
+        <p>
+          So, for example, athn.c has routines that directly change particular
+          registers (using <code>AR_WRITE</code> i.e. <code>sc_ops.write</code>
+          which might resolve to <code>athn_pci_write</code>), the lowest-level
+          routines being implemented in if_athn_pci.c & if_athn_cardbus.c,
+          whereas ath.c uses the higher-level routines already provided by the HAL.
+        </p>
+        <p>
+          <code>ath_softc</code> and <code>athn_softc</code> are the most
+          important structs in both, which, presumably, will have a few mutexes
+          on them when finished (as FreeBSD).  ath(4) seems to be the more
+          complicated of the two drivers.
+        </p>
+      </article>
+      <hr>
+      <article>
+	<h2>
+	  <a id="beginning-gsoc-2023" href="#beginning-gsoc-2023">Beginning GSoC 2023</a>
+	</h2>
+        <p class="date">
+          <time datetime="2023-05-10">10<sup>th</sup> May, 2023</time>
+        </p>
+        <p>
+          NetBSD is undergoing a
+          <a href="https://wiki.netbsd.org/Wifi_renewal_on_hg">
+            transition to a new Wi-Fi stack</a>.
+          My project is to convert the drivers athn(4) and if time allows ath(4).
+        </p>
+        <p>
+          This far I have ensured that the wifi branch builds and runs on the
+          target netbook.  All the unconverted drivers need to be disabled.
+          Ethernet works.  Presently it identifies as NetBSD 9.99.100.
+        </p>
+        <p>
+          To examine:
+        </p>
+        <ul>
+          <li>
+            dev/pci/if_athn_pci.c and dev/pci/if_ath_pci.c and (perhaps
+            especially) dev/ic/athn.c and dev/ic/ath.c
+          </li>
+          <li>other converted drivers e.g. rtwn(4)</li>
+          <li>
+            FreeBSD
+            <a href="https://cgit.freebsd.org/src/tree/sys/dev/ath?h=main">ath(4)</a>
+            &ndash; converted and seemingly a lot more code now</li>
+        </ul>
+        <p>
+          One of the most obvious differences in the converted drivers is
+          the locking (<code>mutex_init</code>, <code>mutex_enter</code>,
+          <code>mutex_exit</code>).
+        </p>
+      </article>
+    </main>
+  </body>
+</html>
